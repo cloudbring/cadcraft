@@ -4,7 +4,6 @@
 //! `docs/target-app-parity.md`).
 
 use std::path::Path;
-use std::process::Command;
 
 /// Leaf menu items with their path ("Draw > Circle > 3 Points").
 pub fn leaves(catalog: &str) -> Vec<String> {
@@ -65,11 +64,7 @@ fn civil_from_days(days: u64) -> (i64, u32, u32) {
 
 pub fn run(root: &Path) -> Result<(), String> {
     let catalog = std::fs::read_to_string(root.join("xtask/data/menu-catalog.txt")).map_err(|e| format!("menu catalog: {e}"))?;
-    let out = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
-        .current_dir(root)
-        .args(["run", "-q", "-p", "cadcraft-cli", "--", "commands"])
-        .output()
-        .map_err(|e| format!("cadcraft-cli: {e}"))?;
+    let out = craft_xtask::Cargo { root: root.into(), ..Default::default() }.output(&["run", "-q", "-p", "cadcraft-cli", "--", "commands"])?;
     let cmds: serde_json::Value = serde_json::from_slice(&out.stdout).map_err(|e| format!("commands JSON: {e}"))?;
     let (md, summary) = report(&catalog, &cmds, &today());
     std::fs::write(root.join(OUT), md).map_err(|e| format!("{OUT}: {e}"))?;

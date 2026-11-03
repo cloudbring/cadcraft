@@ -46,28 +46,22 @@ pub fn wasm_safe(policy: &layers::Config, name: &str) -> bool {
     policy.layers.iter().take(5).any(|(_, members)| members.iter().any(|member| member == name)) || name == "cadcraft-ui-egui"
 }
 
-fn describe(policy: &layers::Config, name: &str) -> String {
-    if policy.exempt.iter().any(|member| member == name) {
-        "exempt".into()
-    } else if policy.standalone.iter().any(|member| member == name) {
-        "L0 standalone".into()
-    } else if policy.testkits.iter().any(|member| member == name) {
-        "testkit".into()
+fn describe<'a>(policy: &'a layers::Config, name: &str) -> &'a str {
+    if policy.exempt.iter().any(|m| m == name) {
+        "exempt"
+    } else if policy.standalone.iter().any(|m| m == name) {
+        "L0 standalone"
+    } else if policy.testkits.iter().any(|m| m == name) {
+        "testkit"
     } else {
-        policy
-            .layers
-            .iter()
-            .find(|(_, members)| members.iter().any(|member| member == name))
-            .map(|(label, _)| label.clone())
-            .unwrap_or("UNREGISTERED".into())
+        policy.layers.iter().find(|(_, m)| m.iter().any(|m| m == name)).map_or("UNREGISTERED", |(l, _)| l)
     }
 }
 
-pub fn layer_report(policy: &layers::Config, metadata: &serde_json::Value) -> Result<(String, Result)> {
-    let crates = layers::from_metadata(metadata)?;
+pub fn render_layers(policy: &layers::Config, checked: &layers::Report) -> (String, Result) {
     let mut report = format!("Dependency layering (plan/architecture.md §3)\n\n{:<28} {:<14} workspace deps\n", "crate", "layer");
-    for krate in &crates {
-        let deps = krate
+    for krate in &checked.crates {
+        let deps: Vec<_> = krate
             .deps
             .iter()
             .filter(|dep| dep.workspace)
@@ -79,20 +73,22 @@ pub fn layer_report(policy: &layers::Config, metadata: &serde_json::Value) -> Re
                 };
                 format!("{}{suffix}", dep.name.strip_prefix("cadcraft-").unwrap_or(&dep.name))
             })
-            .collect::<Vec<_>>();
+            .collect();
         report += &format!("{:<28} {:<14} {}\n", krate.name, describe(policy, &krate.name), deps.join(", "));
     }
-    let violations = layers::check(policy, &crates)?;
-    report += "\n";
-    let result = if violations.is_empty() {
-        report += &format!("OK: {} crates, no layering violations.\n", crates.len());
-        Ok(())
+    if checked.ok {
+        report += &format!("\nOK: {} crates, no layering violations.\n", checked.crates.len());
+        (report, Ok(()))
     } else {
-        report += &format!("{} violation(s):\n", violations.len());
-        for violation in &violations {
+        report += &format!("\n{} violation(s):\n", checked.violations.len());
+        for violation in &checked.violations {
             report += &format!("  - {violation}\n");
         }
-        Err(format!("{} layering violation(s)", violations.len()))
-    };
-    Ok((report, result))
+        (report, Err(format!("{} layering violation(s)", checked.violations.len())))
+    }
+}
+
+#[allow(dead_code)]
+pub fn layer_report(policy: &layers::Config, metadata: &serde_json::Value) -> Result<(String, Result)> {
+    Ok(render_layers(policy, &layers::check_graph(policy, &layers::from_metadata(metadata)?)?))
 }

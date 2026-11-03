@@ -1149,7 +1149,7 @@ source = "git+https://github.com/storytold/craft-libs?rev=92d392cff132eaf53e13af
 [[package]]
 name = "craft-hash"
 version = "0.1.0"
-source = "git+https://github.com/cloudbring/craft-libs?branch=algo%2Fintegration#89133cd7c5d061ebd6ffcb933dd786c42794f07c"
+source = "git+https://github.com/cloudbring/craft-libs?branch=algo%2Fintegration#3c4d2f7430f7c5c35f046078af101b5ee1f75091"
 dependencies = [
  "sha2",
 ]
@@ -1248,7 +1248,7 @@ dependencies = [
 [[package]]
 name = "craft-xtask"
 version = "0.1.0"
-source = "git+https://github.com/cloudbring/craft-libs?branch=algo%2Fintegration#89133cd7c5d061ebd6ffcb933dd786c42794f07c"
+source = "git+https://github.com/cloudbring/craft-libs?branch=algo%2Fintegration#3c4d2f7430f7c5c35f046078af101b5ee1f75091"
 dependencies = [
  "craft-hash",
  "glob",

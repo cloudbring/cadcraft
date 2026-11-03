@@ -84,16 +84,9 @@ fn run(mut cmd: Command, what: &str) -> Result<(), String> {
     if status.success() { Ok(()) } else { Err(format!("{what}: exited with {status}")) }
 }
 
-pub fn metadata() -> Result<serde_json::Value, String> {
-    let out = cargo().args(["metadata", "--format-version", "1", "--no-deps"]).output().map_err(|e| format!("cargo metadata: {e}"))?;
-    if !out.status.success() {
-        return Err(format!("cargo metadata failed:\n{}", String::from_utf8_lossy(&out.stderr)));
-    }
-    serde_json::from_slice(&out.stdout).map_err(|e| format!("cargo metadata: bad JSON: {e}"))
-}
-
 fn cmd_layers() -> Result<(), String> {
-    let (report, result) = config::layer_report(&config::layers(&root()), &metadata()?)?;
+    let policy = config::layers(&root());
+    let (report, result) = config::render_layers(&policy, &layers::compute(&policy, &layers::Args::default())?);
     print!("{report}");
     result
 }
@@ -101,8 +94,8 @@ fn cmd_layers() -> Result<(), String> {
 /// Workspace packages that must build for wasm32: all L0–L5 crates plus
 /// the egui shell.
 fn wasm_set() -> Result<Vec<String>, String> {
-    let crates = layers::from_metadata(&metadata()?)?;
     let policy = config::layers(&root());
+    let crates = layers::compute(&policy, &layers::Args::default())?.crates;
     Ok(crates.into_iter().filter(|krate| config::wasm_safe(&policy, &krate.name)).map(|c| c.name).collect())
 }
 
