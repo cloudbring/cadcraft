@@ -1,14 +1,15 @@
-//! Circles tangent to two curves (FILLET) and the points where two curves cross, for lines,
-//! circles, ellipses and splines.
+//! Circles tangent to two curves (FILLET) and the points where two curves cross.
 //!
-//! The centre of a radius-`r` circle tangent to two curves lies on an offset of each, at
-//! distance `r` along the normal. Sampled offset curves are intersected to find every candidate,
-//! then Newton's method on the exact offset curves (finite-difference Jacobian, capped
-//! iterations) refines each one. `r = 0` gives the crossings of the curves themselves. Standard
-//! numerical methods; degenerate input yields no solutions, never a panic or NaN.
+//! Line/line, line/circle and circle/circle use the closed forms in `intersect`. Every other
+//! pair is decomposed into Bézier pieces (Boehm decomposition for splines, exact rational
+//! quadratics for circles and ellipses) and intersected by Bézier clipping. A positive radius
+//! intersects the offset curves: lines and circles exactly, splines and ellipses by Hermite
+//! cubics within a bounded error. Each candidate is polished by Newton with the analytic
+//! Jacobian of the two offset equations. `r = 0` is the crossings of the curves themselves.
+//! Degenerate input yields no solutions, never a panic or NaN.
 
-use crate::predicates::orient_det;
-use crate::{Bounds2, Circle, Ellipse, Line, Spline, TAU, Vec2};
+use crate::bezier_clip::{self, Bezier, ContactKind};
+use crate::{Bounds2, Circle, Ellipse, Line, Spline, TAU, Vec2, circle_circle, line_circle, line_line_infinite};
 
 /// A curve as a tangency target. Lines are infinite, circles and ellipses whole (parameter =
 /// angle, eccentric angle for ellipses), splines limited to their domain.
@@ -31,21 +32,14 @@ pub struct CornerFit {
     pub center: Vec2,
 }
 
-/// Samples round a whole circle or ellipse.
-const ROUND_SAMPLES: usize = 720;
-/// Most samples along one spline.
-const MAX_SPLINE_SAMPLES: usize = 2048;
-/// Newton iterations per candidate.
-const NEWTON_STEPS: usize = 40;
 /// Most solutions reported.
 const MAX_SOLUTIONS: usize = 64;
 
-/// Parameter range of a curve for sampling; `bounded` ranges clamp (splines end).
+/// Parameter range of a curve; `bounded` ranges clamp (splines end).
 #[derive(Clone, Copy, Debug)]
 struct Range {
     lo: f64,
     hi: f64,
-    bounded: bool,
 }
 
 impl TanCurve {
@@ -103,133 +97,16 @@ impl TanCurve {
                 let ts = window.corners().map(|c| (c - l.a).dot(d) / len2);
                 let lo = ts.iter().copied().fold(f64::INFINITY, f64::min);
                 let hi = ts.iter().copied().fold(f64::NEG_INFINITY, f64::max);
-                (lo.is_finite() && hi.is_finite() && hi > lo).then_some(Range { lo, hi, bounded: false })
+                (lo.is_finite() && hi.is_finite() && hi > lo).then_some(Range { lo, hi })
             }
-            TanCurve::Circle(c) => (c.radius > 1e-300 && c.radius.is_finite()).then_some(Range { lo: 0.0, hi: TAU, bounded: false }),
-            TanCurve::Ellipse(e) => {
-                (e.major.len() > 1e-300 && e.ratio > 0.0 && e.ratio.is_finite()).then_some(Range { lo: 0.0, hi: TAU, bounded: false })
-            }
+            TanCurve::Circle(c) => (c.radius > 1e-300 && c.radius.is_finite()).then_some(Range { lo: 0.0, hi: TAU }),
+            TanCurve::Ellipse(e) => (e.major.len() > 1e-300 && e.ratio > 0.0 && e.ratio.is_finite()).then_some(Range { lo: 0.0, hi: TAU }),
             TanCurve::Spline(s) => {
                 let (lo, hi) = s.domain();
-                (s.is_valid() && lo.is_finite() && hi > lo).then_some(Range { lo, hi, bounded: true })
+                (s.is_valid() && lo.is_finite() && hi > lo).then_some(Range { lo, hi })
             }
         }
     }
-
-    fn sample_count(&self) -> usize {
-        match self {
-            TanCurve::Line(_) => 1,
-            TanCurve::Circle(_) | TanCurve::Ellipse(_) => ROUND_SAMPLES,
-            TanCurve::Spline(s) => s.control.len().saturating_mul(16).clamp(256, MAX_SPLINE_SAMPLES),
-        }
-    }
-}
-
-/// A sampled offset curve: runs of consecutive (parameter, point) samples.
-fn sample(c: &TanCurve, r: &Range, d: f64) -> Vec<Vec<(f64, Vec2)>> {
-    let n = c.sample_count();
-    let mut runs: Vec<Vec<(f64, Vec2)>> = vec![Vec::new()];
-    for i in 0..=n {
-        let t = r.lo + (r.hi - r.lo) * i as f64 / n as f64;
-        match c.offset(t, d) {
-            Some(p) => {
-                if let Some(run) = runs.last_mut() {
-                    run.push((t, p));
-                }
-            }
-            None => runs.push(Vec::new()),
-        }
-    }
-    runs.retain(|r| r.len() >= 2);
-    runs
-}
-
-/// Where segments `a0-a1` and `b0-b1` cross: fractions along each.
-fn seg_cross(a0: Vec2, a1: Vec2, b0: Vec2, b1: Vec2) -> Option<(f64, f64)> {
-    let (da, db) = (a1 - a0, b1 - b0);
-    // Parallel chords do not cross. The sign is exact; the window below is chord fuzz.
-    let den = orient_det(Vec2::ZERO, da, db);
-    if den == 0.0 || !den.is_finite() {
-        return None;
-    }
-    let w = b0 - a0;
-    let u = orient_det(Vec2::ZERO, w, db) / den;
-    let v = orient_det(Vec2::ZERO, w, da) / den;
-    // Sampled curve chords: a hit within this fraction of a chord is the same crossing.
-    let tol = 1e-9;
-    ((-tol..=1.0 + tol).contains(&u) && (-tol..=1.0 + tol).contains(&v)).then_some((u.clamp(0.0, 1.0), v.clamp(0.0, 1.0)))
-}
-
-/// Crossings of two sampled polylines, as parameter seeds, with chunked box culling.
-fn crossings(a: &[(f64, Vec2)], b: &[(f64, Vec2)], out: &mut Vec<(f64, f64)>, work: &mut usize) {
-    const CHUNK: usize = 16;
-    let boxes = |s: &[(f64, Vec2)]| -> Vec<(usize, Bounds2)> {
-        (0..s.len().saturating_sub(1))
-            .step_by(CHUNK)
-            .map(|i| (i, Bounds2::from_points(s.iter().skip(i).take(CHUNK + 1).map(|x| x.1)).expand(1e-9)))
-            .collect()
-    };
-    let (ba, bb) = (boxes(a), boxes(b));
-    for (ia, xa) in &ba {
-        for (ib, xb) in &bb {
-            let Some(left) = work.checked_sub(1) else { return };
-            *work = left;
-            if !xa.intersects(xb) {
-                continue;
-            }
-            for i in *ia..(*ia + CHUNK).min(a.len().saturating_sub(1)) {
-                let (Some(&(ta0, a0)), Some(&(ta1, a1))) = (a.get(i), a.get(i + 1)) else { continue };
-                for j in *ib..(*ib + CHUNK).min(b.len().saturating_sub(1)) {
-                    let Some(left) = work.checked_sub(1) else { return };
-                    *work = left;
-                    let (Some(&(tb0, b0)), Some(&(tb1, b1))) = (b.get(j), b.get(j + 1)) else { continue };
-                    if let Some((u, v)) = seg_cross(a0, a1, b0, b1) {
-                        out.push((ta0 + (ta1 - ta0) * u, tb0 + (tb1 - tb0) * v));
-                        if out.len() > MAX_SOLUTIONS * 8 {
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/// Newton's method on `offset1(t1) = offset2(t2)`.
-#[allow(clippy::too_many_arguments)]
-fn refine(c1: &TanCurve, r1: &Range, d1: f64, c2: &TanCurve, r2: &Range, d2: f64, seed: (f64, f64), tol: f64) -> Option<(f64, f64)> {
-    let clamp = |r: &Range, t: f64| if r.bounded { t.clamp(r.lo, r.hi) } else { t };
-    let (h1, h2) = (((r1.hi - r1.lo) * 1e-7).max(1e-12), ((r2.hi - r2.lo) * 1e-7).max(1e-12));
-    let (mut a, mut b) = seed;
-    for _ in 0..NEWTON_STEPS {
-        let f = c1.offset(a, d1)? - c2.offset(b, d2)?;
-        if f.len() <= tol * 1e-6 {
-            break;
-        }
-        // One-sided differences at a bounded end.
-        let diff = |c: &TanCurve, r: &Range, t: f64, d: f64, h: f64| -> Option<Vec2> {
-            let (lo, hi) = (clamp(r, t - h), clamp(r, t + h));
-            if hi - lo <= 0.0 {
-                return None;
-            }
-            Some((c.offset(hi, d)? - c.offset(lo, d)?) / (hi - lo))
-        };
-        let ja = diff(c1, r1, a, d1, h1)?;
-        let jb = -diff(c2, r2, b, d2, h2)?;
-        let det = ja.cross(jb);
-        if det.abs() <= 1e-300 {
-            break;
-        }
-        let rhs = -f;
-        let (da, db) = (rhs.cross(jb) / det, ja.cross(rhs) / det);
-        if !(da.is_finite() && db.is_finite()) {
-            return None;
-        }
-        a = clamp(r1, a + da);
-        b = clamp(r2, b + db);
-    }
-    let f = c1.offset(a, d1)? - c2.offset(b, d2)?;
-    (f.len() <= tol && a.is_finite() && b.is_finite()).then_some((a, b))
 }
 
 /// Circles of radius `r` tangent to both curves (`r = 0`: the points where they cross). `near`
@@ -243,37 +120,14 @@ pub fn tangent_circles(c1: &TanCurve, c2: &TanCurve, r: f64, near: &[Vec2]) -> V
     let size = win.width().max(win.height()).max(r).max(1e-9);
     let win = win.expand(2.0 * r + 0.25 * size);
     let tol = 1e-9 * size.max(1.0);
-    let (Some(r1), Some(r2)) = (c1.range(&win), c2.range(&win)) else { return Vec::new() };
-    let signs: &[(f64, f64)] = if r > 0.0 { &[(1.0, 1.0), (1.0, -1.0), (-1.0, 1.0), (-1.0, -1.0)] } else { &[(0.0, 0.0)] };
-    let mut out: Vec<CornerFit> = Vec::new();
-    let mut work = 16_000_000usize;
-    for (s1, s2) in signs {
-        let (d1, d2) = (s1 * r, s2 * r);
-        let (o1, o2) = (sample(c1, &r1, d1), sample(c2, &r2, d2));
-        let search = TanSearch { c1, r1: &r1, d1, c2, r2: &r2, d2, tol };
-        // Refine each pair before visiting the next: raw duplicate seeds in an early run must
-        // not consume all candidate slots. A separate request-wide budget bounds actual work.
-        for a in &o1 {
-            for b in &o2 {
-                if !refine_pair(&search, a, b, &mut work, &mut out) {
-                    return out;
-                }
-            }
-        }
+    if is_line_or_circle(c1) && is_line_or_circle(c2) {
+        return closed_forms(c1, c2, r, &win, tol);
     }
-    out
+    clipped(c1, c2, r, &win, tol)
 }
 
-/// The two curves of one tangent search for one sign choice: their ranges and offsets, and the
-/// tolerance.
-struct TanSearch<'a> {
-    c1: &'a TanCurve,
-    r1: &'a Range,
-    d1: f64,
-    c2: &'a TanCurve,
-    r2: &'a Range,
-    d2: f64,
-    tol: f64,
+fn is_line_or_circle(c: &TanCurve) -> bool {
+    matches!(c, TanCurve::Line(_) | TanCurve::Circle(_))
 }
 
 /// The window the tangent search looks in: the pick points and the extents of the curves that
@@ -299,29 +153,398 @@ fn search_window(c1: &TanCurve, c2: &TanCurve, near: &[Vec2]) -> Option<Bounds2>
     Some(win)
 }
 
-/// Refine the crossings of the samples `a` and `b` into circles, adding the distinct ones to
-/// `out`. `false` when the work budget or the solution cap ends the search.
-fn refine_pair(search: &TanSearch, a: &[(f64, Vec2)], b: &[(f64, Vec2)], work: &mut usize, out: &mut Vec<CornerFit>) -> bool {
-    let mut seeds = Vec::new();
-    crossings(a, b, &mut seeds, work);
-    seeds.sort_by(|x, y| x.0.total_cmp(&y.0).then(x.1.total_cmp(&y.1)));
-    seeds.dedup_by(|x, y| (x.0 - y.0).abs() < 1e-9 && (x.1 - y.1).abs() < 1e-9);
-    for seed in seeds {
-        // Newton refinement has a fixed iteration cap and several curve evaluations.
-        let Some(left) = work.checked_sub(128) else { return false };
-        *work = left;
-        let TanSearch { c1, r1, d1, c2, r2, d2, tol } = *search;
-        let Some((t1, t2)) = refine(c1, r1, d1, c2, r2, d2, seed, tol) else { continue };
-        let (Some(center), p1, p2) = (c1.offset(t1, d1), c1.point(t1), c2.point(t2)) else { continue };
-        let near_dup = |f: &CornerFit| f.center.near(center, tol * 1e3) && f.p1.near(p1, tol * 1e3) && f.p2.near(p2, tol * 1e3);
-        if !out.iter().any(near_dup) {
-            out.push(CornerFit { t1, t2, p1, p2, center });
+fn closed_forms(c1: &TanCurve, c2: &TanCurve, r: f64, win: &Bounds2, tol: f64) -> Vec<CornerFit> {
+    match (c1, c2) {
+        (TanCurve::Line(a), TanCurve::Line(b)) => line_line_fits(a, b, r, win, tol),
+        (TanCurve::Line(l), TanCurve::Circle(c)) => line_circle_fits(l, c, r, win, tol, true),
+        (TanCurve::Circle(c), TanCurve::Line(l)) => line_circle_fits(l, c, r, win, tol, false),
+        (TanCurve::Circle(a), TanCurve::Circle(b)) => circle_circle_fits(a, b, r, tol),
+        _ => Vec::new(),
+    }
+}
+
+fn line_line_fits(a: &Line, b: &Line, r: f64, win: &Bounds2, tol: f64) -> Vec<CornerFit> {
+    let mut out = Vec::new();
+    for (s1, s2) in sign_pairs(r) {
+        let (o1, o2) = (a.offset(s1 * r), b.offset(s2 * r));
+        let Some((center, _, _)) = line_line_infinite(o1.a, o1.b, o2.a, o2.b) else { continue };
+        let Some((p1, t1)) = line_touch(a, s1 * r, center) else { continue };
+        let Some((p2, t2)) = line_touch(b, s2 * r, center) else { continue };
+        if !line_in_window(a, t1, win) || !line_in_window(b, t2, win) {
+            continue;
         }
-        if out.len() >= MAX_SOLUTIONS {
-            return false;
+        push_fit(&mut out, CornerFit { t1, t2, p1, p2, center }, tol);
+    }
+    out
+}
+
+fn line_circle_fits(line: &Line, circle: &Circle, r: f64, win: &Bounds2, tol: f64, line_first: bool) -> Vec<CornerFit> {
+    let mut out = Vec::new();
+    for (s_line, s_circle) in sign_pairs(r) {
+        let offset = line.offset(s_line * r);
+        let locus = circle.radius - s_circle * r;
+        if !locus.is_finite() || locus.abs() <= 1e-14 {
+            continue;
+        }
+        for (center, _) in line_circle(&offset, &Circle::new(circle.center, locus.abs())) {
+            let Some((p_line, t_on_line)) = line_touch(line, s_line * r, center) else { continue };
+            if !line_in_window(line, t_on_line, win) {
+                continue;
+            }
+            let Some(radial) = circle_radial(circle, s_circle * r, center) else { continue };
+            let p_circle = circle.center + radial * circle.radius;
+            let t_circle = radial.angle();
+            if !p_circle.is_finite() || !center.is_finite() {
+                continue;
+            }
+            let fit = if line_first {
+                CornerFit { t1: t_on_line, t2: t_circle, p1: p_line, p2: p_circle, center }
+            } else {
+                CornerFit { t1: t_circle, t2: t_on_line, p1: p_circle, p2: p_line, center }
+            };
+            push_fit(&mut out, fit, tol);
         }
     }
-    *work != 0
+    out
+}
+
+fn circle_circle_fits(a: &Circle, b: &Circle, r: f64, tol: f64) -> Vec<CornerFit> {
+    let mut out = Vec::new();
+    for (s1, s2) in sign_pairs(r) {
+        let (r1, r2) = (a.radius - s1 * r, b.radius - s2 * r);
+        if !r1.is_finite() || !r2.is_finite() || r1.abs() <= 1e-14 || r2.abs() <= 1e-14 {
+            continue;
+        }
+        for center in circle_circle(&Circle::new(a.center, r1.abs()), &Circle::new(b.center, r2.abs())) {
+            let (Some(rad1), Some(rad2)) = (circle_radial(a, s1 * r, center), circle_radial(b, s2 * r, center)) else { continue };
+            let p1 = a.center + rad1 * a.radius;
+            let p2 = b.center + rad2 * b.radius;
+            if p1.is_finite() && p2.is_finite() {
+                push_fit(&mut out, CornerFit { t1: rad1.angle(), t2: rad2.angle(), p1, p2, center }, tol);
+            }
+        }
+    }
+    out
+}
+
+fn sign_pairs(r: f64) -> &'static [(f64, f64)] {
+    if r > 0.0 { &[(1.0, 1.0), (1.0, -1.0), (-1.0, 1.0), (-1.0, -1.0)] } else { &[(0.0, 0.0)] }
+}
+
+/// Touch point on `line` for a centre that sits at signed distance `d` along the left normal.
+fn line_touch(line: &Line, d: f64, center: Vec2) -> Option<(Vec2, f64)> {
+    let n = (line.b - line.a).perp().normalized();
+    if n == Vec2::ZERO || !center.is_finite() {
+        return None;
+    }
+    let p = center - n * d;
+    p.is_finite().then_some((p, line.param_of(p)))
+}
+
+fn line_in_window(line: &Line, t: f64, win: &Bounds2) -> bool {
+    let Some(range) = TanCurve::Line(*line).range(win) else { return false };
+    t.is_finite() && t >= range.lo - 1e-7 && t <= range.hi + 1e-7
+}
+
+/// Unit radial of the touch point. The left normal of a circle points inward, so a positive
+/// offset shrinks the radius and a negative locus flips the radial.
+fn circle_radial(circle: &Circle, d: f64, center: Vec2) -> Option<Vec2> {
+    let v = center - circle.center;
+    if v.len2() <= 1e-24 || !v.is_finite() {
+        return None;
+    }
+    let radial = if circle.radius - d < 0.0 { -v } else { v };
+    let n = radial.normalized();
+    (n != Vec2::ZERO).then_some(n)
+}
+
+fn push_fit(out: &mut Vec<CornerFit>, fit: CornerFit, tol: f64) {
+    if out.len() >= MAX_SOLUTIONS || !fit.center.is_finite() || !fit.p1.is_finite() || !fit.p2.is_finite() {
+        return;
+    }
+    let gap = tol.max(1e-9) * 1e3;
+    if out.iter().any(|f| f.center.near(fit.center, gap) && f.p1.near(fit.p1, gap) && f.p2.near(fit.p2, gap)) {
+        return;
+    }
+    out.push(fit);
+}
+
+fn clipped(c1: &TanCurve, c2: &TanCurve, r: f64, win: &Bounds2, tol: f64) -> Vec<CornerFit> {
+    let p1 = pieces_of(c1, win);
+    let p2 = pieces_of(c2, win);
+    if p1.is_empty() || p2.is_empty() {
+        return Vec::new();
+    }
+    let approx = (tol * 40.0).max(1e-6);
+    let mut out = Vec::new();
+    for (s1, s2) in sign_pairs(r) {
+        let (d1, d2) = (s1 * r, s2 * r);
+        let o1 = offset_pieces(c1, &p1, d1, approx);
+        let o2 = offset_pieces(c2, &p2, d2, approx);
+        let accept = if r == 0.0 { tol.clamp(1e-12, 1e-9) } else { (approx * 4.0).max(tol) };
+        for a in &o1 {
+            for b in &o2 {
+                if out.len() >= MAX_SOLUTIONS {
+                    return out;
+                }
+                for hit in bezier_clip::intersect(a, b, accept).contacts {
+                    if hit.kind == ContactKind::Overlap {
+                        continue;
+                    }
+                    let hit = HitSeed { at: hit.at, guess: hit.point, radius: r, tol };
+                    accept_hit(
+                        &OffsetEq { curve: c1, pieces: &p1, distance: d1 },
+                        &OffsetEq { curve: c2, pieces: &p2, distance: d2 },
+                        &hit,
+                        &mut out,
+                    );
+                }
+            }
+        }
+    }
+    out
+}
+
+struct HitSeed {
+    at: (f64, f64),
+    guess: Vec2,
+    radius: f64,
+    tol: f64,
+}
+
+fn accept_hit(a: &OffsetEq, b: &OffsetEq, hit: &HitSeed, out: &mut Vec<CornerFit>) {
+    let t_seed = project(a.curve, seed_param(a.curve, a.distance, hit.at.0, hit.guess), hit.guess);
+    let u_seed = project(b.curve, seed_param(b.curve, b.distance, hit.at.1, hit.guess), hit.guess);
+    let Some((t1, t2)) = newton(a, b, t_seed, u_seed, hit.tol) else { return };
+    let (pt1, pt2) = (a.curve.point(t1), b.curve.point(t2));
+    let (Some(center), Some(other)) = (a.curve.offset(t1, a.distance), b.curve.offset(t2, b.distance)) else { return };
+    let slack = hit.tol.max(1e-8);
+    if center.dist(other) > slack || (pt1.dist(center) - hit.radius).abs() > 1e-6 || (pt2.dist(other) - hit.radius).abs() > 1e-6 {
+        return;
+    }
+    push_fit(out, CornerFit { t1, t2, p1: pt1, p2: pt2, center }, hit.tol);
+}
+
+fn seed_param(c: &TanCurve, d: f64, hint: f64, center: Vec2) -> f64 {
+    match c {
+        TanCurve::Line(l) => l.param_of(center - (l.b - l.a).perp().normalized() * d),
+        TanCurve::Circle(circle) => circle_radial(circle, d, center).map(|n| n.angle()).unwrap_or(hint),
+        TanCurve::Ellipse(_) | TanCurve::Spline(_) => hint,
+    }
+}
+
+fn project(c: &TanCurve, mut t: f64, point: Vec2) -> f64 {
+    if !t.is_finite() {
+        t = 0.0;
+    }
+    for _ in 0..12 {
+        let p = c.point(t);
+        let v = c.derivative(t);
+        let l2 = v.len2();
+        if !(l2 > 1e-24 && p.is_finite()) {
+            break;
+        }
+        let step = (point - p).dot(v) / l2;
+        if !step.is_finite() || step.abs() < 1e-15 {
+            break;
+        }
+        t = clamp_param(c, t + step.clamp(-1.0, 1.0));
+    }
+    t
+}
+
+fn clamp_param(c: &TanCurve, t: f64) -> f64 {
+    match c {
+        TanCurve::Spline(s) => {
+            let (lo, hi) = s.domain();
+            if lo.is_finite() && hi > lo { t.clamp(lo, hi) } else { t }
+        }
+        _ => t,
+    }
+}
+
+struct OffsetEq<'a> {
+    curve: &'a TanCurve,
+    pieces: &'a [Bezier],
+    distance: f64,
+}
+
+fn newton(a: &OffsetEq, b: &OffsetEq, mut t: f64, mut u: f64, tol: f64) -> Option<(f64, f64)> {
+    let mut best: Option<(f64, f64, f64)> = None;
+    for _ in 0..16 {
+        let (o1, k1) = offset_kin(a, t)?;
+        let (o2, k2) = offset_kin(b, u)?;
+        let f = o1 - o2;
+        let residual = f.len();
+        if !residual.is_finite() {
+            return None;
+        }
+        if best.is_none_or(|(_, _, r)| residual < r) {
+            best = Some((t, u, residual));
+        }
+        if residual <= tol.max(1e-12) {
+            return Some((t, u));
+        }
+        let ja = k1;
+        let jb = -k2;
+        let det = ja.cross(jb);
+        if det.abs() <= 1e-14 * ja.len() * jb.len().max(1e-14) {
+            break;
+        }
+        let rhs = -f;
+        let (dt, du) = (rhs.cross(jb) / det, ja.cross(rhs) / det);
+        if !(dt.is_finite() && du.is_finite()) {
+            break;
+        }
+        t = clamp_param(a.curve, t + dt.clamp(-0.75, 0.75));
+        u = clamp_param(b.curve, u + du.clamp(-0.75, 0.75));
+    }
+    best.filter(|(_, _, r)| *r <= tol.max(1e-8)).map(|(t, u, _)| (t, u))
+}
+
+/// Analytic derivative of `point + distance · left_normal`.
+fn offset_kin(eq: &OffsetEq, t: f64) -> Option<(Vec2, Vec2)> {
+    let (p, v, a) = kinematics(eq.curve, eq.pieces, t)?;
+    if eq.distance == 0.0 {
+        return (p.is_finite() && v.is_finite()).then_some((p, v));
+    }
+    let speed = v.len();
+    if speed <= 1e-14 {
+        return None;
+    }
+    let n = v.perp() / speed;
+    let point = p + n * eq.distance;
+    let dn = a.perp() / speed - v.perp() * (v.dot(a) / (speed * speed * speed));
+    let deriv = v + dn * eq.distance;
+    (point.is_finite() && deriv.is_finite()).then_some((point, deriv))
+}
+
+fn kinematics(c: &TanCurve, pieces: &[Bezier], t: f64) -> Option<(Vec2, Vec2, Vec2)> {
+    match c {
+        TanCurve::Line(l) => {
+            let p = l.a + (l.b - l.a) * t;
+            p.is_finite().then_some((p, l.b - l.a, Vec2::ZERO))
+        }
+        TanCurve::Circle(circle) => {
+            let radial = Vec2::from_angle(t);
+            let p = circle.center + radial * circle.radius;
+            let v = radial.perp() * circle.radius;
+            (p.is_finite() && v.is_finite()).then_some((p, v, -radial * circle.radius))
+        }
+        TanCurve::Ellipse(e) => {
+            let p = e.at_param(t);
+            let v = e.derivative(t);
+            // d²/dθ² (center + major cos θ + minor sin θ) = -(point − center).
+            (p.is_finite() && v.is_finite()).then_some((p, v, -(p - e.center)))
+        }
+        TanCurve::Spline(_) => piece_covering(pieces, t)?.eval_parent(t),
+    }
+}
+
+fn piece_covering(pieces: &[Bezier], t: f64) -> Option<&Bezier> {
+    let mut nearest: Option<&Bezier> = None;
+    let mut nearest_d = f64::INFINITY;
+    for piece in pieces {
+        if t >= piece.t0 && t <= piece.t1 {
+            return Some(piece);
+        }
+        let d = (t - piece.t0).abs().min((t - piece.t1).abs());
+        if d < nearest_d {
+            nearest = Some(piece);
+            nearest_d = d;
+        }
+    }
+    nearest.filter(|_| nearest_d <= 1e-5)
+}
+
+fn pieces_of(c: &TanCurve, win: &Bounds2) -> Vec<Bezier> {
+    match c {
+        TanCurve::Line(l) => line_piece(l, win).into_iter().collect(),
+        TanCurve::Circle(circle) => {
+            conic_pieces(circle.center, Vec2::new(circle.radius, 0.0), Vec2::new(0.0, circle.radius), 0.0, TAU, |p| (p - circle.center).angle())
+        }
+        TanCurve::Ellipse(e) => {
+            let minor = e.minor();
+            conic_pieces(e.center, e.major, minor, e.start, e.sweep(), |p| e.param_of(p))
+        }
+        TanCurve::Spline(s) => spline_pieces(s),
+    }
+}
+
+fn line_piece(l: &Line, win: &Bounds2) -> Option<Bezier> {
+    let range = TanCurve::Line(*l).range(win)?;
+    let (a, b) = (l.a + (l.b - l.a) * range.lo, l.a + (l.b - l.a) * range.hi);
+    if !a.is_finite() || !b.is_finite() || a.near(b, 1e-15) {
+        return None;
+    }
+    Bezier::polynomial(&[a, b], range.lo, range.hi)
+}
+
+/// Rational-quadratic pieces of `center + u cos θ + v sin θ`. Parent parameters are the
+/// geometric angle, recovered at the breaks (the Bézier parameter is not linear in θ, and
+/// Newton only uses the ends as a bracket).
+fn conic_pieces(center: Vec2, u: Vec2, v: Vec2, start: f64, sweep: f64, angle_of: impl Fn(Vec2) -> f64) -> Vec<Bezier> {
+    let Some(spline) = Spline::from_conic_arc(center, u, v, start, sweep) else { return Vec::new() };
+    let Some((segs, breaks)) = spline.bezier_pieces() else { return Vec::new() };
+    let mut out = Vec::new();
+    for (seg, span) in segs.iter().zip(breaks.windows(2)) {
+        let (Some(&s0), Some(&s1)) = (span.first(), span.get(1)) else { continue };
+        let (p0, p1) = (spline.eval(s0), spline.eval(s1));
+        if !p0.is_finite() || !p1.is_finite() {
+            continue;
+        }
+        let t0 = angle_of(p0);
+        let mut t1 = angle_of(p1);
+        if t1 < t0 {
+            t1 += TAU;
+        }
+        if let Some(piece) = Bezier::from_homogeneous(seg, t0, t1) {
+            out.push(piece);
+        }
+    }
+    out
+}
+
+fn spline_pieces(s: &Spline) -> Vec<Bezier> {
+    let Some((segs, breaks)) = s.bezier_pieces() else { return Vec::new() };
+    let mut out = Vec::new();
+    for (seg, span) in segs.iter().zip(breaks.windows(2)) {
+        let (Some(&t0), Some(&t1)) = (span.first(), span.get(1)) else { continue };
+        if let Some(piece) = Bezier::from_homogeneous(seg, t0, t1) {
+            out.push(piece);
+        }
+    }
+    out
+}
+
+fn offset_pieces(c: &TanCurve, pieces: &[Bezier], distance: f64, tol: f64) -> Vec<Bezier> {
+    if distance == 0.0 {
+        return pieces.to_vec();
+    }
+    if let TanCurve::Circle(circle) = c {
+        return circle_offset_pieces(circle, distance);
+    }
+    let mut out = Vec::new();
+    for piece in pieces {
+        out.extend(bezier_clip::offset_curve(piece, distance, tol));
+        if out.len() >= 96 {
+            break;
+        }
+    }
+    out
+}
+
+fn circle_offset_pieces(circle: &Circle, distance: f64) -> Vec<Bezier> {
+    let locus = circle.radius - distance;
+    if !locus.is_finite() || locus.abs() <= 1e-12 {
+        return Vec::new();
+    }
+    let abs = locus.abs();
+    let shift = if locus < 0.0 { crate::PI } else { 0.0 };
+    conic_pieces(circle.center, Vec2::new(abs, 0.0), Vec2::new(0.0, abs), shift, TAU, |p| {
+        let phi = (p - circle.center).angle();
+        if locus < 0.0 { phi - crate::PI } else { phi }
+    })
 }
 
 #[cfg(test)]
@@ -397,19 +620,41 @@ mod tests {
         let bad = TanCurve::Spline(Spline { degree: 3, knots: vec![0.0, 1.0], control: vec![Vec2::ZERO], ..Spline::default() });
         assert!(tangent_circles(&bad, &s, 1.0, &[]).is_empty());
     }
-}
 
-#[cfg(test)]
-mod seed_budget_tests {
-    use super::*;
+    /// y = (t − 0.37)² as a quadratic Bézier. It touches y = 0 and stays above, so every chord
+    /// of a uniform sample stays above the line and the old sampler reported nothing.
     #[test]
-    fn crossing_visits_have_an_independent_work_limit() {
-        let a = [(0.0, Vec2::new(0.0, 0.0)), (1.0, Vec2::new(1.0, 1.0))];
-        let b = [(0.0, Vec2::new(0.0, 1.0)), (1.0, Vec2::new(1.0, 0.0))];
-        let mut seeds = Vec::new();
-        crossings(&a, &b, &mut seeds, &mut 0);
-        assert!(seeds.is_empty());
-        crossings(&a, &b, &mut seeds, &mut 10);
-        assert_eq!(seeds, vec![(0.5, 0.5)]);
+    fn tangent_parabola_is_one_contact() {
+        let curve = TanCurve::Spline(Spline::from_control(vec![Vec2::new(0.0, 0.1369), Vec2::new(0.5, -0.2331), Vec2::new(1.0, 0.3969)], 2));
+        let line = TanCurve::Line(Line::new(Vec2::new(-1.0, 0.0), Vec2::new(2.0, 0.0)));
+        let hits = tangent_circles(&curve, &line, 0.0, &[]);
+        assert_eq!(hits.len(), 1, "{hits:?}");
+        assert!(hits[0].p1.near(Vec2::new(0.37, 0.0), 1e-8), "{hits:?}");
+        assert!(hits[0].p1.near(hits[0].p2, 1e-9));
+    }
+
+    #[test]
+    fn perpendicular_lines_use_the_closed_form() {
+        let x = TanCurve::Line(Line::new(Vec2::ZERO, Vec2::X));
+        let y = TanCurve::Line(Line::new(Vec2::ZERO, Vec2::Y));
+        let fits = tangent_circles(&x, &y, 1.0, &[]);
+        assert_eq!(fits.len(), 4, "{fits:?}");
+        for f in &fits {
+            check(&x, &y, f, 1.0);
+            assert!((f.center.x.abs() - 1.0).abs() < 1e-9 && (f.center.y.abs() - 1.0).abs() < 1e-9, "{f:?}");
+        }
+    }
+
+    #[test]
+    fn spline_bezier_derivative_matches_de_boor() {
+        let s = s_curve();
+        let pieces = spline_pieces(&s);
+        assert_eq!(pieces.len(), 1);
+        for k in 0..=8 {
+            let t = k as f64 / 8.0;
+            let (p, v, _) = pieces[0].eval_parent(t).expect("parent");
+            assert!(p.near(s.eval(t), 1e-9), "{p:?} vs {:?}", s.eval(t));
+            assert!(v.near(s.derivative(t), 1e-8), "{v:?} vs {:?}", s.derivative(t));
+        }
     }
 }

@@ -315,8 +315,8 @@ impl Spline {
     }
 
     /// Bézier decomposition: the homogeneous control points of each polynomial piece
-    /// (degree + 1 each) and the parameter breaks between them (pieces + 1 values).
-    fn bezier_pieces(&self) -> Option<(Vec<Vec<H>>, Vec<f64>)> {
+    /// (degree + 1 each, `(w·P, w)`) and the parameter breaks between them (pieces + 1 values).
+    pub(crate) fn bezier_pieces(&self) -> Option<(Vec<Vec<H>>, Vec<f64>)> {
         let mut s = self.clamped()?;
         let p = s.degree;
         if p > MAX_EDIT_DEGREE {
