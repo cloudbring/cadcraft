@@ -269,7 +269,7 @@ impl Comp {
         let diff = lm::Diff::Analytic { model: &self.model, built: &included };
         // Rigid clusters of a determined system are solved first. Underdetermined systems start
         // from the caller's parameters so the weighted minimum-norm step is unchanged.
-        let x_start = crate::owen::starting_x(self);
+        let x_start = if skip.is_none() { crate::owen::starting_x(self) } else { self.model.x0.clone() };
         let mut o = lm::solve_diff(&f, &x_start, &free, &self.weights, self.tol, MAX_ITER, &diff);
         if o.too_wide {
             return Err(SolveError::TooLarge);

@@ -3,7 +3,7 @@
 //! What this is: the entity graph (a constraint on two or more entities is a clique) is split
 //! into biconnected components. A component is treated as rigid when its residual rows leave at
 //! most three degrees of freedom on the entities' free parameters (`rows + 3 >= free`). A
-//! determined system (`rows >= free`) with two or more such clusters solves each cluster, then
+//! full-column-rank system with two or more such clusters solves each cluster, then
 //! the whole component. That is the simplified decomposition the solver uses.
 //!
 //! What this is not (Owen, "Algebraic solution of geometric constraint problems", 1991, is not
@@ -24,6 +24,7 @@ use crate::residual::Built;
 
 const MAX_ENTITIES: usize = 8192;
 const MAX_DEPTH: usize = 2048;
+const MAX_RANK_WORK: usize = 4_000_000;
 
 pub(crate) struct Decomp {
     /// Constraint indices of each rigid biconnected component, in discovery order.
@@ -47,12 +48,27 @@ pub(crate) fn decompose(comp: &Comp) -> Decomp {
             rigid.push(idxs);
         }
     }
-    let warm = determined && rigid.len() >= 2 && n <= MAX_ENTITIES;
+    let rank_work = rows.saturating_mul(free.len()).saturating_mul(rows.min(free.len()));
+    let warm = determined
+        && rigid.len() >= 2
+        && n <= MAX_ENTITIES
+        && rank_work <= MAX_RANK_WORK
+        && comp.built.iter().all(|built| !crate::jac::is_numeric_fallback(built))
+        && {
+            let built: Vec<&Built> = comp.built.iter().collect();
+            let jacobian = crate::jac::dense(&comp.model, &built, &comp.model.x0, &free);
+            lm::rank_qr(&jacobian, rows, free.len()) == free.len()
+        };
     Decomp { rigid, warm }
 }
 
 /// Parameters to give the global step. A warm start only when [`decompose`] says so.
 pub(crate) fn starting_x(comp: &Comp) -> Vec<f64> {
+    let free_count = comp.free(None).len();
+    let rows = comp.rows(None);
+    if free_count == 0 || rows < free_count || rows.saturating_mul(free_count).saturating_mul(rows.min(free_count)) > MAX_RANK_WORK {
+        return comp.model.x0.clone();
+    }
     let decomp = decompose(comp);
     if !decomp.warm {
         return comp.model.x0.clone();
@@ -150,6 +166,7 @@ fn solve_cluster(comp: &Comp, idxs: &[usize], x: &[f64], mark: &[bool]) -> Optio
     let built: Vec<&Built> = idxs.iter().filter_map(|&i| comp.built.get(i)).collect();
     let mut free = Vec::new();
     for b in &built {
+        free.extend((b.aux..b.aux + b.aux_init.len()).filter(|&index| mark.get(index).copied() == Some(true)));
         for n in constraint_nodes(comp, b) {
             let Some(s) = comp.model.slots.get(n) else { continue };
             for j in s.off..s.off + s.len {
@@ -380,6 +397,38 @@ mod tests {
         assert!(decomp.warm, "rigid {:?}, rows {} free {}", decomp.rigid.len(), comp.rows(None), comp.free(None).len());
         let o = comp.run(None).unwrap();
         assert!(o.converged);
+        let free = comp.free(None);
+        let built: Vec<&Built> = comp.built.iter().collect();
+        let residual = |parameters: &[f64], output: &mut Vec<f64>| comp.eval(parameters, output, None);
+        let global = lm::solve_diff(
+            &residual,
+            &comp.model.x0,
+            &free,
+            &comp.weights,
+            comp.tol,
+            crate::MAX_ITER,
+            &Diff::Analytic { model: &comp.model, built: &built },
+        );
+        assert!(global.converged);
+        let delta = o.x.iter().zip(&global.x).map(|(clustered, unclustered)| (clustered - unclustered).abs()).fold(0.0, f64::max);
+        assert!(delta <= 1e-9, "cluster delta {delta:e}");
+        for omitted in 0..comp.built.len() {
+            let free = comp.free(Some(omitted));
+            let built: Vec<&Built> = comp.built.iter().enumerate().filter(|(index, _)| *index != omitted).map(|(_, built)| built).collect();
+            let residual = |parameters: &[f64], output: &mut Vec<f64>| comp.eval(parameters, output, Some(omitted));
+            let direct = lm::solve_diff(
+                &residual,
+                &comp.model.x0,
+                &free,
+                &comp.weights,
+                comp.tol,
+                crate::MAX_ITER,
+                &Diff::Analytic { model: &comp.model, built: &built },
+            );
+            let probe = comp.run(Some(omitted)).unwrap();
+            assert_eq!(probe.converged, direct.converged);
+            assert_eq!(probe.x, direct.x, "conflict probe must not solve the omitted constraint first");
+        }
         comp.model.write_back(&mut d, &o.x);
         let at = |h| match &d.entity(h).unwrap().kind {
             EntityKind::Point(p) => (p.p.x, p.p.y),
@@ -394,5 +443,21 @@ mod tests {
         near(c, 1.0, 4.0);
         near(e, 0.0, 5.0);
         near(f, -4.0, 1.0);
+    }
+
+    #[test]
+    fn redundant_rows_do_not_make_a_hinge_determined() {
+        let mut drawing = Drawing::default();
+        let first = point(&mut drawing, 0.0, 0.0);
+        let hinge = point(&mut drawing, 3.0, 0.2);
+        let last = point(&mut drawing, 6.1, 0.4);
+        for index in 0..3 {
+            distance(&mut drawing, 2 * index + 1, first, hinge, 3.0);
+            distance(&mut drawing, 2 * index + 2, hinge, last, 3.0);
+        }
+        let component = comp_of(&drawing);
+        assert_eq!(component.rows(None), component.free(None).len());
+        assert!(!decompose(&component).warm);
+        assert_eq!(starting_x(&component), component.model.x0);
     }
 }

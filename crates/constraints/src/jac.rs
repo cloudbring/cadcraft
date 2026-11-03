@@ -14,7 +14,7 @@ use crate::residual::{Built, Form};
 
 /// Kinds / forms that still use central differences. Reported by the solver docs and tests.
 pub(crate) const NUMERIC_FALLBACK: &[&str] =
-    &["Tangent or Smooth, spline end on a curve (Form::EndOn)", "Tangent or Smooth, joined curve ends including G2 (Form::Join)"];
+    &["Tangent, spline end on a curve (Form::EndOn)", "Tangent or Smooth, joined curve ends including G2 (Form::Join)"];
 
 /// Spline end-frame residuals. Everything else has an analytic partial.
 pub(crate) fn is_numeric_fallback(b: &Built) -> bool {
@@ -441,9 +441,8 @@ mod match_tests {
 
     fn max_rel(analytic: &[f64], fd: &[f64]) -> f64 {
         analytic.iter().zip(fd).fold(0.0, |m, (&a, &b)| {
-            // Unit floor: a partial near 0 is compared absolutely, so finite-difference
-            // truncation (about 1e-8) is not reported as a large relative error.
-            let scale = a.abs().max(b.abs()).max(1.0);
+            // Relative tolerance 1e-6, with a 1e-8 absolute noise floor near zero.
+            let scale = a.abs().max(b.abs()).max(0.01);
             m.max((a - b).abs() / scale)
         })
     }
@@ -483,7 +482,9 @@ mod match_tests {
 
     fn forms_of(d: &Drawing, c: &Constraint) -> Vec<Form> {
         let cons = [c];
-        let (comps, _) = build(d, &cons, &SolveOptions::default()).unwrap();
+        let (comps, skipped) = build(d, &cons, &SolveOptions::default()).unwrap();
+        assert!(skipped.is_empty(), "{skipped:?}");
+        assert_eq!(comps.len(), 1);
         comps[0].built.iter().map(|b| b.form).collect()
     }
 
@@ -700,11 +701,53 @@ mod match_tests {
         let join = con(K::Smooth, &[w(a), w(b)], "");
         assert!(matches!(forms_of(&d, &join)[0], Form::Join { .. }));
         assert_jac("spline join", &d, &join);
+        let tangent_join = con(K::Tangent, &[w(a), w(b)], "");
+        assert!(matches!(forms_of(&d, &tangent_join)[0], Form::Join { g2: false, .. }));
+        assert_jac("spline G1 join", &d, &tangent_join);
+        let joined_line = line(&mut d, (-1.0, 0.4), (2.0, 0.5));
+        let smooth_line = con(K::Smooth, &[w(joined_line), w(sp)], "");
+        assert!(matches!(forms_of(&d, &smooth_line)[0], Form::Join { g2: true, .. }));
+        assert_jac("smooth spline-line join", &d, &smooth_line);
         let vtx = point(&mut d, (3.0, 2.0));
         let on_v = con(K::Coincident, &[s(sp, Sub::Vertex(1)), w(vtx)], "");
         let cons = [&on_v];
         let (comps, _) = build(&d, &cons, &SolveOptions::default()).unwrap();
         assert!(comps[0].built.iter().all(|b| !is_numeric_fallback(b)));
         assert_jac("spline vertex coincident", &d, &on_v);
+    }
+
+    #[test]
+    fn reversed_and_internal_branches_match_central_difference() {
+        let mut drawing = Drawing::default();
+        let first = line(&mut drawing, (0.3, 0.7), (6.2, 2.4));
+        let second = line(&mut drawing, (1.4, 5.3), (7.3, 6.6));
+        let vertex = point(&mut drawing, (4.6, -2.3));
+        let outer = circle(&mut drawing, (2.1, 1.3), 4.7);
+        let inner = circle(&mut drawing, (3.2, 1.7), 1.4);
+        let oval = ellipse(&mut drawing, (8.1, -1.3), (3.2, 1.1), 0.7, 0.3, 2.4);
+        for constraint in [
+            con(K::Coincident, &[w(first), w(vertex)], ""),
+            con(K::Coincident, &[w(outer), w(vertex)], ""),
+            con(K::Coincident, &[w(oval), w(vertex)], ""),
+            con(K::Tangent, &[w(outer), w(first)], ""),
+            con(K::Tangent, &[w(oval), w(first)], ""),
+            con(K::Tangent, &[w(outer), w(inner)], ""),
+            con(K::Tangent, &[w(inner), w(outer)], ""),
+            con(K::Smooth, &[w(outer), w(inner)], ""),
+            con(K::Smooth, &[w(oval), w(outer)], ""),
+            con(K::Distance(DistAxis::Aligned), &[w(first), w(vertex)], "2"),
+            con(K::Distance(DistAxis::Aligned), &[s(first, Sub::End), s(first, Sub::Start)], "2"),
+            con(K::Distance(DistAxis::Horizontal), &[w(second)], "2"),
+            con(K::Distance(DistAxis::Vertical), &[w(second)], "2"),
+            con(K::Vertical, &[w(oval)], ""),
+            con(K::Coincident, &[s(oval, Sub::Mid), w(vertex)], ""),
+            con(K::Coincident, &[s(oval, Sub::End), w(vertex)], ""),
+        ] {
+            assert_jac(constraint.kind.name(), &drawing, &constraint);
+        }
+        let reversed = line(&mut drawing, (-2.7, 8.1), (0.2, 0.8));
+        let angular = con(K::Angular, &[w(first), w(reversed)], "70");
+        assert!(matches!(forms_of(&drawing, &angular)[0], Form::Rays { rev: [false, true] }));
+        assert_jac("reversed angular ray", &drawing, &angular);
     }
 }

@@ -165,7 +165,7 @@ fn two_line_angle_over_180_is_rejected() {
     assert!(d.constraints.is_empty());
     assert_eq!((ln(&d, a), ln(&d, b)), before);
     ok(&mut d, dim(ConstraintKind::Angular, &[w(a), w(b)], "", "180"));
-    assert!(all_satisfied(&d));
+    assert!(all_satisfied(&d), "residuals {:?}, geometry {:?}", residuals(&d), (ln(&d, a), ln(&d, b)));
 }
 
 #[test]
@@ -488,4 +488,79 @@ fn arc_solved_with_a_negative_radius_keeps_its_points() {
             assert!(circ(&d, a).1 > 0.0);
         }
     }
+}
+
+fn push(d: &mut Drawing, id: u32, kind: ConstraintKind, refs: Vec<GeomRef>, expr: &str) {
+    d.constraints.push(Constraint { id, kind, refs, name: String::new(), expr: expr.into() });
+}
+
+/// One-shot solves of the fixture shapes. The analytic step and the old dense numerical step
+/// land on the same parameters.
+fn positions_within(d: &Drawing, tol: f64) -> f64 {
+    let cons: Vec<&Constraint> = d.constraints.iter().collect();
+    let (comps, skip) = build(d, &cons, &SolveOptions::default()).unwrap();
+    assert!(skip.is_empty(), "{skip:?}");
+    let mut worst = 0.0_f64;
+    for comp in &comps {
+        let free = comp.free(None);
+        let f = |x: &[f64], out: &mut Vec<f64>| comp.eval(x, out, None);
+        let numeric = lm::solve_dense_legacy(&f, &comp.model.x0, &free, &comp.weights, comp.tol, 200);
+        let analytic = comp.run(None).unwrap();
+        assert!(numeric.converged && analytic.converged, "num {} an {}", numeric.converged, analytic.converged);
+        let dense = lm::solve_fixture(comp, false);
+        let sparse = lm::solve_fixture(comp, true);
+        assert!(dense.converged && sparse.converged);
+        let delta = dense.x.iter().zip(&sparse.x).map(|(dense, sparse)| (dense - sparse).abs()).fold(0.0, f64::max);
+        assert!(delta <= 1e-9, "sparse/dense fixture delta {delta:e}");
+        eprintln!("fixture {} rows: sparse/dense delta {delta:e}", comp.rows(None));
+        for (a, b) in numeric.x.iter().zip(&analytic.x) {
+            worst = worst.max((a - b).abs());
+        }
+    }
+    assert!(worst <= tol, "position delta {worst} > {tol}");
+    worst
+}
+
+#[test]
+fn fixture_sketches_match_the_numeric_solver() {
+    let mut rect = Drawing::default();
+    let bottom = line(&mut rect, (0.0, 0.0), (10.2, 0.3));
+    let right = line(&mut rect, (10.0, 0.1), (9.8, 5.0));
+    let top = line(&mut rect, (10.1, 5.2), (0.2, 4.9));
+    let left = line(&mut rect, (0.0, 5.0), (0.1, -0.2));
+    let mut id = 1;
+    for (p, q) in [(bottom, right), (right, top), (top, left), (left, bottom)] {
+        push(&mut rect, id, ConstraintKind::Coincident, vec![s(p, Sub::End), s(q, Sub::Start)], "");
+        id += 1;
+    }
+    for h in [bottom, top] {
+        push(&mut rect, id, ConstraintKind::Horizontal, vec![w(h)], "");
+        id += 1;
+    }
+    for h in [left, right] {
+        push(&mut rect, id, ConstraintKind::Vertical, vec![w(h)], "");
+        id += 1;
+    }
+    push(&mut rect, id, ConstraintKind::Fix, vec![s(bottom, Sub::Start)], "");
+    id += 1;
+    push(&mut rect, id, ConstraintKind::Distance(DistAxis::Horizontal), vec![w(bottom)], "10");
+    id += 1;
+    push(&mut rect, id, ConstraintKind::Distance(DistAxis::Vertical), vec![w(right)], "5");
+    positions_within(&rect, 1e-9);
+
+    let mut ang = Drawing::default();
+    let a = line(&mut ang, (0.0, 0.0), (10.0, 0.0));
+    let b = line(&mut ang, (0.0, 0.0), (1.0, 5.0));
+    push(&mut ang, 1, ConstraintKind::Angular, vec![w(a), w(b)], "90");
+    push(&mut ang, 2, ConstraintKind::Fix, vec![w(a)], "");
+    push(&mut ang, 3, ConstraintKind::Fix, vec![s(b, Sub::Start)], "");
+    push(&mut ang, 4, ConstraintKind::Distance(DistAxis::Aligned), vec![w(b)], "5");
+    positions_within(&ang, 1e-9);
+
+    let mut tan = Drawing::default();
+    let l = line(&mut tan, (0.0, 3.2), (8.0, 3.4));
+    let c = circle(&mut tan, (3.0, 1.0), 2.2);
+    push(&mut tan, 1, ConstraintKind::Tangent, vec![w(l), w(c)], "");
+    push(&mut tan, 2, ConstraintKind::Fix, vec![w(l)], "");
+    positions_within(&tan, 1e-9);
 }

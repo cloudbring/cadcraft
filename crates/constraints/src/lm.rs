@@ -262,7 +262,7 @@ struct LoopIn<'a> {
     diff: &'a Diff<'a>,
     tol: f64,
     max_iter: usize,
-    force_dense: bool,
+    dense_limit: usize,
 }
 
 /// Run the solver from `x0`. Only `free` parameters change.
@@ -275,11 +275,11 @@ pub(crate) fn solve_diff(
     max_iter: usize,
     diff: &Diff<'_>,
 ) -> Outcome {
-    solve_loop(LoopIn { f, x0, free, weights, diff, tol, max_iter, force_dense: false })
+    solve_loop(LoopIn { f, x0, free, weights, diff, tol, max_iter, dense_limit: DENSE_LIMIT })
 }
 
 fn solve_loop(input: LoopIn<'_>) -> Outcome {
-    let LoopIn { f, x0, free, weights, diff, tol, max_iter, force_dense } = input;
+    let LoopIn { f, x0, free, weights, diff, tol, max_iter, dense_limit } = input;
     let mut x = x0.to_vec();
     let mut r = Vec::new();
     f(&x, &mut r);
@@ -298,7 +298,7 @@ fn solve_loop(input: LoopIn<'_>) -> Outcome {
     let mut rn = Vec::with_capacity(rows);
     while iter < max_iter {
         iter += 1;
-        let step = if force_dense || rows <= DENSE_LIMIT {
+        let step = if rows <= dense_limit {
             StepJac::Dense(match diff {
                 Diff::Numeric => jacobian(f, &x, free, rows),
                 Diff::Analytic { model, built } => crate::jac::dense(model, built, &x, free),
@@ -439,12 +439,53 @@ pub(crate) fn solve_dense_legacy(
     tol: f64,
     max_iter: usize,
 ) -> Outcome {
-    solve_loop(LoopIn { f, x0, free, weights, diff: &Diff::Numeric, tol, max_iter, force_dense: true })
+    solve_loop(LoopIn { f, x0, free, weights, diff: &Diff::Numeric, tol, max_iter, dense_limit: usize::MAX })
+}
+
+#[cfg(test)]
+pub(crate) fn solve_fixture(comp: &crate::Comp, sparse: bool) -> Outcome {
+    let built: Vec<&crate::residual::Built> = comp.built.iter().collect();
+    let free = comp.free(None);
+    let residual = |parameters: &[f64], output: &mut Vec<f64>| comp.eval(parameters, output, None);
+    solve_loop(LoopIn {
+        f: &residual,
+        x0: &comp.model.x0,
+        free: &free,
+        weights: &comp.weights,
+        diff: &Diff::Analytic { model: &comp.model, built: &built },
+        tol: comp.tol,
+        max_iter: crate::MAX_ITER,
+        dense_limit: if sparse { 0 } else { usize::MAX },
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sparse_normal_matches_dense_with_weights_permutations_and_fill() {
+        let rows = 73;
+        let columns = rows * 2;
+        let weights: Vec<f64> = (0..columns).map(|index| 0.2 + (index % 11) as f64 * 0.3).collect();
+        let rhs: Vec<f64> = (0..rows).map(|index| (index as f64 * 0.37).sin()).collect();
+        let mut triplets = Vec::new();
+        let mut jacobian = vec![0.0; rows * columns];
+        for row in 0..rows {
+            let permuted = row * 17 % rows;
+            for (column, value) in [(row, 2.0), (rows + row, 0.3), (rows + (row + 1) % rows, -0.4), (rows + (row + 3) % rows, 0.2)] {
+                triplets.push((permuted as u32, column as u32, value));
+                jacobian[permuted * columns + column] = value;
+            }
+        }
+        for damping in [1e-4, 1e-8, 1e-10, 1e-15] {
+            let dense = dense_normal(&jacobian, &weights, &rhs, rows, columns, damping).unwrap();
+            let sparse = crate::sparse::solve_damped(rows, &triplets, &weights, &rhs, damping).unwrap();
+            let delta = dense.iter().zip(&sparse).map(|(dense, sparse)| (dense - sparse).abs()).fold(0.0, f64::max);
+            assert!(delta <= 1e-9, "normal solve delta {delta:e} at damping {damping:e}");
+            eprintln!("normal solve delta {delta:e} at damping {damping:e}");
+        }
+    }
 
     #[test]
     fn dense_and_rank() {
