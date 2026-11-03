@@ -1,0 +1,21 @@
+Dependency layering (plan/architecture.md §3)
+
+crate                        layer          workspace deps
+cadcraft                     exempt         engine, io, mcp, ui-egui
+cadcraft-cli                 exempt         engine, io, mcp, render
+cadcraft-color               L0             
+cadcraft-constraints         L2             doc, geom
+cadcraft-doc                 L1             color, geom
+cadcraft-dwg                 L0 standalone  
+cadcraft-dxf                 L0 standalone  
+cadcraft-engine              L4             color, constraints, doc, dxf, fonts, geom, render, io (dev)
+cadcraft-fonts               L2             geom
+cadcraft-geom                L0             
+cadcraft-io                  L3             color, doc, dwg, dxf, fonts, geom, render
+cadcraft-mcp                 L5             engine, io, render
+cadcraft-render              L2             color, doc, fonts, geom
+cadcraft-ui-egui             L5             color, doc, engine, fonts, geom, render
+cadcraft-web                 exempt         engine, io, ui-egui
+xtask                        exempt         
+
+OK: 16 crates, no layering violations.

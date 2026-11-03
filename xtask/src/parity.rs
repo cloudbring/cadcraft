@@ -71,6 +71,13 @@ pub fn run(root: &Path) -> Result<(), String> {
         .output()
         .map_err(|e| format!("cadcraft-cli: {e}"))?;
     let cmds: serde_json::Value = serde_json::from_slice(&out.stdout).map_err(|e| format!("commands JSON: {e}"))?;
+    let (md, summary) = report(&catalog, &cmds, &today());
+    std::fs::write(root.join(OUT), md).map_err(|e| format!("{OUT}: {e}"))?;
+    println!("{summary}");
+    Ok(())
+}
+
+pub fn report(catalog: &str, cmds: &serde_json::Value, date: &str) -> (String, String) {
     let paths: Vec<String> = cmds
         .as_array()
         .map(|a| {
@@ -82,7 +89,7 @@ pub fn run(root: &Path) -> Result<(), String> {
         })
         .unwrap_or_default();
     let labels: Vec<String> = paths.iter().filter_map(|p| p.rsplit(" > ").next().map(str::to_string)).collect();
-    let ls = leaves(&catalog);
+    let ls = leaves(catalog);
     let mut by_menu: Vec<(String, usize, usize)> = Vec::new();
     let mut missing = Vec::new();
     let mut hit = 0;
@@ -107,7 +114,7 @@ pub fn run(root: &Path) -> Result<(), String> {
     let pct = |a: usize, b: usize| if b == 0 { 0.0 } else { 100.0 * a as f64 / b as f64 };
     let mut md = format!(
         "# Parity checklist\n\n> **Generated:** {} by `cargo xtask parity`. Do not edit by hand.\n\nMenu-breadth parity: a reference menu item counts as covered when a CADCraft command is registered under the same menu label. It measures breadth, not depth; see [target-app-parity.md](target-app-parity.md) for the weighted assessment.\n\n**Menu breadth: {hit} / {} items ({:.0}%)** · {} registered commands.\n\n| Menu | Items | Covered | % |\n|---|---|---|---|\n",
-        today(),
+        date,
         ls.len(),
         pct(hit, ls.len()),
         cmds.as_array().map(Vec::len).unwrap_or(0)
@@ -119,9 +126,7 @@ pub fn run(root: &Path) -> Result<(), String> {
     for m in &missing {
         md += &format!("- {m}\n");
     }
-    std::fs::write(root.join(OUT), md).map_err(|e| format!("{OUT}: {e}"))?;
-    println!("parity: {hit}/{} menu items ({:.0}%) → {OUT}", ls.len(), pct(hit, ls.len()));
-    Ok(())
+    (md, format!("parity: {hit}/{} menu items ({:.0}%) → {OUT}", ls.len(), pct(hit, ls.len())))
 }
 
 #[cfg(test)]

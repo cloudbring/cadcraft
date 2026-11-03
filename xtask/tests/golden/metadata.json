@@ -1,0 +1,962 @@
+{
+  "workspace_members": [
+    "cadcraft-color",
+    "cadcraft-constraints",
+    "cadcraft-doc",
+    "cadcraft-geom",
+    "cadcraft-dwg",
+    "cadcraft-dxf",
+    "cadcraft-engine",
+    "cadcraft-fonts",
+    "cadcraft-render",
+    "cadcraft-io",
+    "cadcraft-mcp",
+    "cadcraft-ui-egui",
+    "cadcraft",
+    "cadcraft-cli",
+    "cadcraft-web",
+    "xtask"
+  ],
+  "packages": [
+    {
+      "name": "cadcraft-color",
+      "id": "cadcraft-color",
+      "manifest_path": "crates/color/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "serde",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft-constraints",
+      "id": "cadcraft-constraints",
+      "manifest_path": "crates/constraints/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "cadcraft-doc",
+          "kind": null,
+          "source": null,
+          "path": "crates/doc"
+        },
+        {
+          "name": "cadcraft-geom",
+          "kind": null,
+          "source": null,
+          "path": "crates/geom"
+        },
+        {
+          "name": "serde",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "thiserror",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft-doc",
+      "id": "cadcraft-doc",
+      "manifest_path": "crates/doc/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "cadcraft-color",
+          "kind": null,
+          "source": null,
+          "path": "crates/color"
+        },
+        {
+          "name": "cadcraft-geom",
+          "kind": null,
+          "source": null,
+          "path": "crates/geom"
+        },
+        {
+          "name": "serde",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde_json",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "thiserror",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft-geom",
+      "id": "cadcraft-geom",
+      "manifest_path": "crates/geom/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "serde",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft-dwg",
+      "id": "cadcraft-dwg",
+      "manifest_path": "crates/dwg/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "log",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "acadrust",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft-dxf",
+      "id": "cadcraft-dxf",
+      "manifest_path": "crates/dxf/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "encoding_rs",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "log",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "thiserror",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft-engine",
+      "id": "cadcraft-engine",
+      "manifest_path": "crates/engine/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "cadcraft-color",
+          "kind": null,
+          "source": null,
+          "path": "crates/color"
+        },
+        {
+          "name": "cadcraft-constraints",
+          "kind": null,
+          "source": null,
+          "path": "crates/constraints"
+        },
+        {
+          "name": "cadcraft-doc",
+          "kind": null,
+          "source": null,
+          "path": "crates/doc"
+        },
+        {
+          "name": "cadcraft-dxf",
+          "kind": null,
+          "source": null,
+          "path": "crates/dxf"
+        },
+        {
+          "name": "cadcraft-fonts",
+          "kind": null,
+          "source": null,
+          "path": "crates/fonts"
+        },
+        {
+          "name": "cadcraft-geom",
+          "kind": null,
+          "source": null,
+          "path": "crates/geom"
+        },
+        {
+          "name": "cadcraft-render",
+          "kind": null,
+          "source": null,
+          "path": "crates/render"
+        },
+        {
+          "name": "craft-docpath",
+          "kind": null,
+          "source": "git+https://github.com/storytold/craft-libs?rev=92d392cff132eaf53e13afff77f38b5c11b73aa0",
+          "path": null
+        },
+        {
+          "name": "log",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "rstar",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde_json",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "thiserror",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "cadcraft-io",
+          "kind": "dev",
+          "source": null,
+          "path": "crates/io"
+        },
+        {
+          "name": "libc",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft-fonts",
+      "id": "cadcraft-fonts",
+      "manifest_path": "crates/fonts/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "cadcraft-geom",
+          "kind": null,
+          "source": null,
+          "path": "crates/geom"
+        },
+        {
+          "name": "harfrust",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "icu_segmenter",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "skrifa",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "unicode-bidi",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft-render",
+      "id": "cadcraft-render",
+      "manifest_path": "crates/render/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "cadcraft-color",
+          "kind": null,
+          "source": null,
+          "path": "crates/color"
+        },
+        {
+          "name": "cadcraft-doc",
+          "kind": null,
+          "source": null,
+          "path": "crates/doc"
+        },
+        {
+          "name": "cadcraft-fonts",
+          "kind": null,
+          "source": null,
+          "path": "crates/fonts"
+        },
+        {
+          "name": "cadcraft-geom",
+          "kind": null,
+          "source": null,
+          "path": "crates/geom"
+        },
+        {
+          "name": "lyon_tessellation",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "tiny-skia",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde_json",
+          "kind": "dev",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "rayon",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft-io",
+      "id": "cadcraft-io",
+      "manifest_path": "crates/io/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "cadcraft-color",
+          "kind": null,
+          "source": null,
+          "path": "crates/color"
+        },
+        {
+          "name": "cadcraft-doc",
+          "kind": null,
+          "source": null,
+          "path": "crates/doc"
+        },
+        {
+          "name": "cadcraft-dwg",
+          "kind": null,
+          "source": null,
+          "path": "crates/dwg"
+        },
+        {
+          "name": "cadcraft-dxf",
+          "kind": null,
+          "source": null,
+          "path": "crates/dxf"
+        },
+        {
+          "name": "cadcraft-fonts",
+          "kind": null,
+          "source": null,
+          "path": "crates/fonts"
+        },
+        {
+          "name": "cadcraft-geom",
+          "kind": null,
+          "source": null,
+          "path": "crates/geom"
+        },
+        {
+          "name": "cadcraft-render",
+          "kind": null,
+          "source": null,
+          "path": "crates/render"
+        },
+        {
+          "name": "craft-pdf",
+          "kind": null,
+          "source": "git+https://github.com/storytold/craft-libs?rev=92d392cff132eaf53e13afff77f38b5c11b73aa0",
+          "path": null
+        },
+        {
+          "name": "miniz_oxide",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "quick-xml",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde_json",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "thiserror",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "acadrust",
+          "kind": "dev",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "craft-pdf",
+          "kind": "dev",
+          "source": "git+https://github.com/storytold/craft-libs?rev=92d392cff132eaf53e13afff77f38b5c11b73aa0",
+          "path": null
+        },
+        {
+          "name": "tiny-skia",
+          "kind": "dev",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft-mcp",
+      "id": "cadcraft-mcp",
+      "manifest_path": "crates/mcp/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "cadcraft-engine",
+          "kind": null,
+          "source": null,
+          "path": "crates/engine"
+        },
+        {
+          "name": "cadcraft-io",
+          "kind": null,
+          "source": null,
+          "path": "crates/io"
+        },
+        {
+          "name": "cadcraft-render",
+          "kind": null,
+          "source": null,
+          "path": "crates/render"
+        },
+        {
+          "name": "clap",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "getrandom",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "log",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde_json",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft-ui-egui",
+      "id": "cadcraft-ui-egui",
+      "manifest_path": "crates/ui-egui/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "cadcraft-color",
+          "kind": null,
+          "source": null,
+          "path": "crates/color"
+        },
+        {
+          "name": "cadcraft-doc",
+          "kind": null,
+          "source": null,
+          "path": "crates/doc"
+        },
+        {
+          "name": "cadcraft-engine",
+          "kind": null,
+          "source": null,
+          "path": "crates/engine"
+        },
+        {
+          "name": "cadcraft-fonts",
+          "kind": null,
+          "source": null,
+          "path": "crates/fonts"
+        },
+        {
+          "name": "cadcraft-geom",
+          "kind": null,
+          "source": null,
+          "path": "crates/geom"
+        },
+        {
+          "name": "cadcraft-render",
+          "kind": null,
+          "source": null,
+          "path": "crates/render"
+        },
+        {
+          "name": "chrono",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "craft-ui",
+          "kind": null,
+          "source": "git+https://github.com/storytold/craft-libs?rev=92d392cff132eaf53e13afff77f38b5c11b73aa0",
+          "path": null
+        },
+        {
+          "name": "craft-window",
+          "kind": null,
+          "source": "git+https://github.com/storytold/craft-libs?rev=92d392cff132eaf53e13afff77f38b5c11b73aa0",
+          "path": null
+        },
+        {
+          "name": "egui",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "egui-wgpu",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "image",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "log",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde_json",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "web-time",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "craft-ui",
+          "kind": "dev",
+          "source": "git+https://github.com/storytold/craft-libs?rev=92d392cff132eaf53e13afff77f38b5c11b73aa0",
+          "path": null
+        },
+        {
+          "name": "egui_kittest",
+          "kind": "dev",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "naga",
+          "kind": "dev",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde_json",
+          "kind": "build",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "toml",
+          "kind": "build",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "craft-update",
+          "kind": null,
+          "source": "git+https://github.com/storytold/craft-libs?rev=c5a1cbfb5f9049f9270955caffb5bee5997aebf7",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft",
+      "id": "cadcraft",
+      "manifest_path": "apps/cadcraft/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "cadcraft-engine",
+          "kind": null,
+          "source": null,
+          "path": "crates/engine"
+        },
+        {
+          "name": "cadcraft-io",
+          "kind": null,
+          "source": null,
+          "path": "crates/io"
+        },
+        {
+          "name": "cadcraft-mcp",
+          "kind": null,
+          "source": null,
+          "path": "crates/mcp"
+        },
+        {
+          "name": "cadcraft-ui-egui",
+          "kind": null,
+          "source": null,
+          "path": "crates/ui-egui"
+        },
+        {
+          "name": "chrono",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "clap",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "eframe",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "egui",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "log",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "ron",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde_json",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "thiserror",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "winresource",
+          "kind": "build",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "winit",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "zbus",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "craft-ui",
+          "kind": null,
+          "source": "git+https://github.com/storytold/craft-libs?rev=92d392cff132eaf53e13afff77f38b5c11b73aa0",
+          "path": null
+        },
+        {
+          "name": "craft-update",
+          "kind": null,
+          "source": "git+https://github.com/storytold/craft-libs?rev=c5a1cbfb5f9049f9270955caffb5bee5997aebf7",
+          "path": null
+        },
+        {
+          "name": "rfd",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "sys-locale",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "hidapi",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "craft-window",
+          "kind": null,
+          "source": "git+https://github.com/storytold/craft-libs?rev=92d392cff132eaf53e13afff77f38b5c11b73aa0",
+          "path": null
+        },
+        {
+          "name": "muda",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "objc2-app-kit",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "winit",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "hidapi",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "windows",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft-cli",
+      "id": "cadcraft-cli",
+      "manifest_path": "apps/cadcraft-cli/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "cadcraft-engine",
+          "kind": null,
+          "source": null,
+          "path": "crates/engine"
+        },
+        {
+          "name": "cadcraft-io",
+          "kind": null,
+          "source": null,
+          "path": "crates/io"
+        },
+        {
+          "name": "cadcraft-mcp",
+          "kind": null,
+          "source": null,
+          "path": "crates/mcp"
+        },
+        {
+          "name": "cadcraft-render",
+          "kind": null,
+          "source": null,
+          "path": "crates/render"
+        },
+        {
+          "name": "clap",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "same-file",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde_json",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "thiserror",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "clap_complete",
+          "kind": "dev",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "clap_mangen",
+          "kind": "dev",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "cadcraft-web",
+      "id": "cadcraft-web",
+      "manifest_path": "apps/cadcraft-web/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "cadcraft-engine",
+          "kind": null,
+          "source": null,
+          "path": "crates/engine"
+        },
+        {
+          "name": "cadcraft-io",
+          "kind": null,
+          "source": null,
+          "path": "crates/io"
+        },
+        {
+          "name": "cadcraft-ui-egui",
+          "kind": null,
+          "source": null,
+          "path": "crates/ui-egui"
+        },
+        {
+          "name": "egui",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "log",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde_json",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "eframe",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "wasm-bindgen",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "wasm-bindgen-futures",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "web-sys",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "web-sys",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    },
+    {
+      "name": "xtask",
+      "id": "xtask",
+      "manifest_path": "xtask/Cargo.toml",
+      "dependencies": [
+        {
+          "name": "chrono",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        },
+        {
+          "name": "serde_json",
+          "kind": null,
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "path": null
+        }
+      ]
+    }
+  ]
+}

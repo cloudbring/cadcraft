@@ -1,14 +1,15 @@
 //! Workspace tooling: `cargo xtask <command>`.
 //!
-//! Pure Rust (std + serde_json). External tools (`cargo`, `curl`, `tar`) are
+//! Shared tasks use craft-xtask. External tools (`cargo`, `curl`, `tar`) are
 //! invoked through `std::process::Command`.
 
+#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+
 mod assets;
-mod ico;
-mod layers;
+mod config;
 mod parity;
-mod stats;
-mod version;
+
+use craft_xtask::{ico, layers, stats, version};
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
@@ -34,6 +35,7 @@ commands:
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let rest: Vec<&str> = args.iter().skip(1).map(String::as_str).collect();
+    let task_args = args.get(1..).unwrap_or_default();
     let result = match args.first().map(String::as_str) {
         Some("assets") => assets::run(&root()),
         Some("layers") => cmd_layers(),
@@ -42,12 +44,16 @@ fn main() -> ExitCode {
         Some("i18n") => cmd_i18n(),
         Some("ci") => cmd_ci(),
         Some("corpus") => cmd_corpus(rest.contains(&"--download")),
-        Some("stats") => stats::run(&root(), rest.contains(&"--exact")),
+        Some("stats") => stats::run(&config::stats(&root()), &if rest.contains(&"--exact") { vec!["--exact".into()] } else { Vec::new() }),
         Some("parity") => parity::run(&root()),
-        Some("ico") => ico::run(&rest),
-        Some("version") => version::run(&root(), &rest),
+        Some("ico") => ico::run(&ico::Config::default(), task_args),
+        Some("version") => version::run(&config::version(&root()), task_args),
         Some("-h" | "--help" | "help") | None => {
             print!("{USAGE}");
+            println!("\nShared task syntax:");
+            for help in [version::cli_help(), stats::cli_help(), ico::cli_help()] {
+                println!("  {help}");
+            }
             Ok(())
         }
         Some(other) => Err(format!("unknown command `{other}`\n\n{USAGE}")),
@@ -63,7 +69,7 @@ fn main() -> ExitCode {
 
 /// Workspace root (parent of the xtask crate).
 pub fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).parent().expect("xtask has a parent dir").to_path_buf()
+    Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap_or(Path::new(".")).to_path_buf()
 }
 
 pub fn cargo() -> Command {
@@ -87,52 +93,17 @@ pub fn metadata() -> Result<serde_json::Value, String> {
 }
 
 fn cmd_layers() -> Result<(), String> {
-    let crates = layers::from_metadata(&metadata()?)?;
-    println!("Dependency layering (plan/architecture.md §3)\n");
-    println!("{:<28} {:<14} workspace deps", "crate", "layer");
-    for c in &crates {
-        let ws: Vec<String> = c
-            .deps
-            .iter()
-            .filter(|d| d.workspace)
-            .map(|d| {
-                let k = match d.kind {
-                    layers::DepKind::Normal => "",
-                    layers::DepKind::Dev => " (dev)",
-                    layers::DepKind::Build => " (build)",
-                };
-                format!("{}{k}", layers::short_name(&d.name))
-            })
-            .collect();
-        println!("{:<28} {:<14} {}", c.name, layers::describe(layers::classify(&c.name)), ws.join(", "));
-    }
-    let violations = layers::check(&crates);
-    println!();
-    if violations.is_empty() {
-        println!("OK: {} crates, no layering violations.", crates.len());
-        Ok(())
-    } else {
-        println!("{} violation(s):", violations.len());
-        for v in &violations {
-            println!("  - {v}");
-        }
-        Err(format!("{} layering violation(s)", violations.len()))
-    }
+    let (report, result) = config::layer_report(&config::layers(&root()), &metadata()?)?;
+    print!("{report}");
+    result
 }
 
 /// Workspace packages that must build for wasm32: all L0–L5 crates plus
 /// the egui shell.
 fn wasm_set() -> Result<Vec<String>, String> {
     let crates = layers::from_metadata(&metadata()?)?;
-    Ok(crates
-        .into_iter()
-        .filter(|c| match layers::classify(&c.name) {
-            Some(layers::Class::Layer(l)) => l <= 4 || layers::short_name(&c.name) == "ui-egui",
-            Some(layers::Class::Standalone) => true,
-            _ => false,
-        })
-        .map(|c| c.name)
-        .collect())
+    let policy = config::layers(&root());
+    Ok(crates.into_iter().filter(|krate| config::wasm_safe(&policy, &krate.name)).map(|c| c.name).collect())
 }
 
 fn cmd_wasm() -> Result<(), String> {

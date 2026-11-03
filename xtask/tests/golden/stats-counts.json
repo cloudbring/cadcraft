@@ -1,0 +1,114 @@
+[
+  {
+    "name": "cadcraft",
+    "files": 13,
+    "lines": 3557,
+    "tests": 67,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-cli",
+    "files": 25,
+    "lines": 3567,
+    "tests": 62,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-color",
+    "files": 1,
+    "lines": 311,
+    "tests": 6,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-constraints",
+    "files": 10,
+    "lines": 4978,
+    "tests": 48,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-doc",
+    "files": 39,
+    "lines": 11809,
+    "tests": 80,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-dwg",
+    "files": 3,
+    "lines": 1628,
+    "tests": 17,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-dxf",
+    "files": 9,
+    "lines": 1848,
+    "tests": 44,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-engine",
+    "files": 438,
+    "lines": 119089,
+    "tests": 1469,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-fonts",
+    "files": 13,
+    "lines": 5678,
+    "tests": 89,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-geom",
+    "files": 14,
+    "lines": 5962,
+    "tests": 110,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-io",
+    "files": 141,
+    "lines": 33644,
+    "tests": 701,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-mcp",
+    "files": 11,
+    "lines": 1619,
+    "tests": 31,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-render",
+    "files": 54,
+    "lines": 11170,
+    "tests": 178,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-ui-egui",
+    "files": 131,
+    "lines": 35856,
+    "tests": 393,
+    "props": 0
+  },
+  {
+    "name": "cadcraft-web",
+    "files": 5,
+    "lines": 788,
+    "tests": 7,
+    "props": 0
+  },
+  {
+    "name": "xtask",
+    "files": 7,
+    "lines": 1205,
+    "tests": 31,
+    "props": 0
+  }
+]

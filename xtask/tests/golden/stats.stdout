@@ -1,0 +1,22 @@
+crate                       files    lines #[test]  proptest!
+--------------------------------------------------------------
+cadcraft                       13     3557      67          0
+cadcraft-cli                   25     3567      62          0
+cadcraft-color                  1      311       6          0
+cadcraft-constraints           10     4978      48          0
+cadcraft-doc                   39    11809      80          0
+cadcraft-dwg                    3     1628      17          0
+cadcraft-dxf                    9     1848      44          0
+cadcraft-engine               438   119089    1469          0
+cadcraft-fonts                 13     5678      89          0
+cadcraft-geom                  14     5962     110          0
+cadcraft-io                   141    33644     701          0
+cadcraft-mcp                   11     1619      31          0
+cadcraft-render                54    11170     178          0
+cadcraft-ui-egui              131    35856     393          0
+cadcraft-web                    5      788       7          0
+xtask                           7     1205      31          0
+--------------------------------------------------------------
+TOTAL                         914   242709    3333          0
+
+(#[test] counts source attributes; macro-generated tests count once. Use --exact for harness counts.)
