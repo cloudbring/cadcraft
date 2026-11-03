@@ -8,6 +8,7 @@
 
 use std::f64::consts::FRAC_PI_2;
 
+use crate::predicates::{Orientation, orient2d};
 use crate::spline::{basis, find_span};
 use crate::{EPS, Ellipse, Spline, TAU, Vec2};
 
@@ -415,10 +416,12 @@ impl Spline {
     /// runs clockwise) as an exact rational quadratic spline, in pieces of at most a quarter
     /// turn. Circular arcs are the case `|u| = |v|`, `u ⟂ v`.
     pub fn from_conic_arc(center: Vec2, u: Vec2, v: Vec2, start: f64, sweep: f64) -> Option<Spline> {
+        // Sweep bounds are a modelling limit (a point, or more than one full turn), not a side test.
+        // A zero orient2d means the two axes are parallel, so the conic has no area.
         if !(start.is_finite() && sweep.is_finite() && center.is_finite() && u.is_finite() && v.is_finite())
             || sweep.abs() < 1e-12
             || sweep.abs() > TAU + 1e-9
-            || u.cross(v).abs() < 1e-300
+            || orient2d(Vec2::ZERO, u, v) == Orientation::Collinear
         {
             return None;
         }

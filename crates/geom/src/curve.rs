@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use crate::predicates::{orient_det, ray_crosses_right};
 use crate::{Bounds2, EPS, PI, TAU, Vec2, angle_in_sweep, arc_segments, ccw_sweep, norm_angle};
 
 /// A straight segment.
@@ -42,9 +43,9 @@ impl Line {
     pub fn dist(&self, p: Vec2) -> f64 {
         self.closest(p).dist(p)
     }
-    /// Signed side: > 0 left of a→b.
+    /// Signed side: positive when `p` is left of a→b. The sign is Shewchuk's orient2d.
     pub fn side(&self, p: Vec2) -> f64 {
-        (self.b - self.a).cross(p - self.a)
+        orient_det(self.a, self.b, p)
     }
     pub fn offset(&self, d: f64) -> Line {
         let n = (self.b - self.a).normalized().perp() * d;
@@ -148,9 +149,9 @@ impl Circle {
         }
         let u = p2 - p1;
         let v = p3 - p1;
-        let det = 2.0 * u.cross(v);
-        // The collinearity threshold must scale with the triangle, not drawing units.
-        if !det.is_finite() || det.abs() <= 1e-12 * (u.len() * v.len()).max(1e-300) {
+        // Exactly collinear points have no circumcircle. A non-zero Shewchuk sign is a real triangle.
+        let det = 2.0 * orient_det(p1, p2, p3);
+        if det == 0.0 || !det.is_finite() {
             return None;
         }
         let u2 = u.len2();
@@ -622,12 +623,9 @@ pub fn point_in_polygon(poly: &[Vec2], p: Vec2) -> bool {
     let mut j = n - 1;
     for i in 0..n {
         if let (Some(a), Some(b)) = (poly.get(i), poly.get(j))
-            && (a.y > p.y) != (b.y > p.y)
+            && ray_crosses_right(*a, *b, p)
         {
-            let x = (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x;
-            if p.x < x {
-                inside = !inside;
-            }
+            inside = !inside;
         }
         j = i;
     }

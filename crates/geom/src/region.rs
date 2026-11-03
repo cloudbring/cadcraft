@@ -12,6 +12,7 @@
 
 use std::collections::HashMap;
 
+use crate::predicates::{Orientation, orient2d, ray_crosses_right};
 use crate::{Bounds2, Line, Vec2, line_line, point_in_polygon, shoelace};
 
 /// Upper bound on input segments (keeps the quadratic split bounded on hostile input).
@@ -302,11 +303,11 @@ fn outer_face(g: &Graph, p: Vec2) -> Option<Vec<usize>> {
                 continue;
             }
             let (Some(a), Some(b)) = (g.pts.get(u), g.pts.get(v)) else { continue };
-            if (a.y > p.y) != (b.y > p.y) {
+            if ray_crosses_right(*a, *b, p) {
+                // Sort key only. Whether the ray crosses is the predicate above, so a rounded
+                // division cannot drop a real hit or invent one.
                 let x = a.x + (b.x - a.x) * (p.y - a.y) / (b.y - a.y);
-                if x > p.x {
-                    hits.push((x, u, v));
-                }
+                hits.push((x, u, v));
             }
         }
     }
@@ -314,7 +315,7 @@ fn outer_face(g: &Graph, p: Vec2) -> Option<Vec<usize>> {
     let max_steps = g.pts.len().saturating_mul(2).max(16);
     for (_, a, b) in hits.into_iter().take(64) {
         let (pa, pb) = (*g.pts.get(a)?, *g.pts.get(b)?);
-        let (u, v) = if (pb - pa).cross(p - pa) > 0.0 { (a, b) } else { (b, a) };
+        let (u, v) = if orient2d(pa, pb, p) == Orientation::Ccw { (a, b) } else { (b, a) };
         if let Some(ids) = trace(g, u, v, max_steps)
             && ids.len() >= 3
             && let Some(lp) = points(g, &ids)

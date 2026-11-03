@@ -7,6 +7,7 @@
 //! iterations) refines each one. `r = 0` gives the crossings of the curves themselves. Standard
 //! numerical methods; degenerate input yields no solutions, never a panic or NaN.
 
+use crate::predicates::orient_det;
 use crate::{Bounds2, Circle, Ellipse, Line, Spline, TAU, Vec2};
 
 /// A curve as a tangency target. Lines are infinite, circles and ellipses whole (parameter =
@@ -146,13 +147,15 @@ fn sample(c: &TanCurve, r: &Range, d: f64) -> Vec<Vec<(f64, Vec2)>> {
 /// Where segments `a0-a1` and `b0-b1` cross: fractions along each.
 fn seg_cross(a0: Vec2, a1: Vec2, b0: Vec2, b1: Vec2) -> Option<(f64, f64)> {
     let (da, db) = (a1 - a0, b1 - b0);
-    let den = da.cross(db);
-    if den.abs() <= 1e-300 {
+    // Parallel chords do not cross. The sign is exact; the window below is chord fuzz.
+    let den = orient_det(Vec2::ZERO, da, db);
+    if den == 0.0 || !den.is_finite() {
         return None;
     }
     let w = b0 - a0;
-    let u = w.cross(db) / den;
-    let v = w.cross(da) / den;
+    let u = orient_det(Vec2::ZERO, w, db) / den;
+    let v = orient_det(Vec2::ZERO, w, da) / den;
+    // Sampled curve chords: a hit within this fraction of a chord is the same crossing.
     let tol = 1e-9;
     ((-tol..=1.0 + tol).contains(&u) && (-tol..=1.0 + tol).contains(&v)).then_some((u.clamp(0.0, 1.0), v.clamp(0.0, 1.0)))
 }

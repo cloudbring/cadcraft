@@ -13,6 +13,7 @@ mod fillet;
 mod intersect;
 mod mat;
 mod nurbs;
+pub mod predicates;
 pub mod region;
 mod spline;
 mod spline_fit;
@@ -25,11 +26,13 @@ pub use curve::{
 pub use fillet::{CornerFit, TanCurve, tangent_circles};
 pub use intersect::{circle_circle, intersect_ext, intersect_segments, line_circle, line_line, line_line_infinite};
 pub use mat::{Mat3, Mat4};
+pub use predicates::{Orientation, incircle, orient2d, point_on_segment, segment_intersects};
 pub use spline::{MAX_DEGREE as MAX_SPLINE_DEGREE, Spline};
 pub use spline_fit::{FitOptions, KnotParam};
 pub use vec::{Vec2, Vec3};
 
-/// Geometric tolerance for coincidence tests in drawing units.
+/// Coincidence distance in drawing units: snaps, zero-length vectors, and full-circle sweeps.
+/// Orientation, collinearity, and "which side of a line" use [`predicates`], not this constant.
 pub const EPS: f64 = 1e-9;
 pub const TAU: f64 = std::f64::consts::TAU;
 pub const PI: f64 = std::f64::consts::PI;

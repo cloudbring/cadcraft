@@ -10,3 +10,9 @@ workspace = true
 
 [dependencies]
 serde = { workspace = true }
+# Shewchuk adaptive orient2d and incircle. Pure Rust, no unsafe, MIT OR Apache-2.0.
+# Runtime kernel for artcraft-algorithms #13; the proof target later is Attene's integer predicates.
+robust = "=1.2.0"
+
+[dev-dependencies]
+proptest = "1"

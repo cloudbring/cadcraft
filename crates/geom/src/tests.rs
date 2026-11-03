@@ -100,6 +100,11 @@ fn line_intersections() {
     assert!(line_line(&a, &b).unwrap().near(Vec2::new(5.0, 5.0), 1e-9));
     let c = Line::new(Vec2::new(20.0, 0.0), Vec2::new(30.0, -10.0));
     assert!(line_line(&a, &c).is_none());
+    // An endpoint touch is a hit. A collinear overlap is not a single point.
+    let touch = Line::new(Vec2::new(10.0, 10.0), Vec2::new(10.0, 12.0));
+    assert!(line_line(&a, &touch).unwrap().near(Vec2::new(10.0, 10.0), 1e-12));
+    let overlap = Line::new(Vec2::new(2.0, 2.0), Vec2::new(12.0, 12.0));
+    assert!(line_line(&a, &overlap).is_none());
 }
 
 #[test]
