@@ -6,13 +6,27 @@
 //! `Δx = −W⁻¹ Jᵀ (J W⁻¹ Jᵀ + μ I)⁻¹ r`. Under-constrained systems therefore move as little as
 //! possible, and heavily weighted parameters (geometry the user just edited, or the first object
 //! picked) move least.
+//!
+//! Up to [`DENSE_LIMIT`] rows the normal matrix is eliminated densely. Above that it is an
+//! envelope Cholesky ([`crate::sparse`]); `faer` is not a dependency.
 
-/// Most residual rows one solve may have (the normal matrix is rows × rows).
-pub const MAX_ROWS: usize = 800;
+/// Most residual rows one solve may have. The dense cap of 800 is gone: past [`DENSE_LIMIT`]
+/// rows the factor is banded, and a pattern wider than [`crate::sparse::MAX_BAND`] is
+/// [`Outcome::too_wide`] instead of an allocation of `rows²`.
+pub const MAX_ROWS: usize = 20_000;
+
+/// Normal matrices at or below this size stay on Gaussian elimination.
+pub(crate) const DENSE_LIMIT: usize = 48;
 
 pub(crate) struct Outcome {
     pub x: Vec<f64>,
     pub converged: bool,
+    /// The normal-matrix envelope did not fit. The caller reports [`crate::SolveError::TooLarge`].
+    pub too_wide: bool,
+}
+
+fn outcome(x: Vec<f64>, converged: bool) -> Outcome {
+    Outcome { x, converged, too_wide: false }
 }
 
 pub(crate) fn max_abs(v: &[f64]) -> f64 {
@@ -232,8 +246,23 @@ pub(crate) enum Diff<'a> {
 }
 
 /// Run the solver from `x0` with a numerical Jacobian. Only `free` parameters change.
+///
+/// Production solves pass [`Diff::Analytic`] to [`solve_diff`]. This entry stays for the
+/// minimum-norm unit tests, which have no constraint model.
+#[allow(dead_code)]
 pub(crate) fn solve(f: &dyn Fn(&[f64], &mut Vec<f64>), x0: &[f64], free: &[usize], weights: &[f64], tol: f64, max_iter: usize) -> Outcome {
     solve_diff(f, x0, free, weights, tol, max_iter, &Diff::Numeric)
+}
+
+struct LoopIn<'a> {
+    f: &'a dyn Fn(&[f64], &mut Vec<f64>),
+    x0: &'a [f64],
+    free: &'a [usize],
+    weights: &'a [f64],
+    diff: &'a Diff<'a>,
+    tol: f64,
+    max_iter: usize,
+    force_dense: bool,
 }
 
 /// Run the solver from `x0`. Only `free` parameters change.
@@ -246,15 +275,20 @@ pub(crate) fn solve_diff(
     max_iter: usize,
     diff: &Diff<'_>,
 ) -> Outcome {
+    solve_loop(LoopIn { f, x0, free, weights, diff, tol, max_iter, force_dense: false })
+}
+
+fn solve_loop(input: LoopIn<'_>) -> Outcome {
+    let LoopIn { f, x0, free, weights, diff, tol, max_iter, force_dense } = input;
     let mut x = x0.to_vec();
     let mut r = Vec::new();
     f(&x, &mut r);
     let rows = r.len();
     if rows == 0 || max_abs(&r) <= tol {
-        return Outcome { x, converged: true };
+        return outcome(x, true);
     }
     if free.is_empty() || rows > MAX_ROWS {
-        return Outcome { x, converged: false };
+        return outcome(x, false);
     }
     let nf = free.len();
     let winv: Vec<f64> = free.iter().map(|&j| 1.0 / weights.get(j).copied().unwrap_or(1.0).max(1e-12)).collect();
@@ -264,49 +298,37 @@ pub(crate) fn solve_diff(
     let mut rn = Vec::with_capacity(rows);
     while iter < max_iter {
         iter += 1;
-        let jac = match diff {
-            Diff::Numeric => jacobian(f, &x, free, rows),
-            Diff::Analytic { model, built } => crate::jac::dense(model, built, &x, free),
+        let step = if force_dense || rows <= DENSE_LIMIT {
+            StepJac::Dense(match diff {
+                Diff::Numeric => jacobian(f, &x, free, rows),
+                Diff::Analytic { model, built } => crate::jac::dense(model, built, &x, free),
+            })
+        } else {
+            StepJac::Trips(match diff {
+                Diff::Numeric => numeric_trips(f, &x, free, rows),
+                Diff::Analytic { model, built } => crate::jac::entries(model, built, &x, free).triplets().to_vec(),
+            })
         };
-        // A = J W⁻¹ Jᵀ
-        let mut a = vec![0.0; rows * rows];
-        for i in 0..rows {
-            for k in i..rows {
-                let mut s = 0.0;
-                for (c, w) in winv.iter().enumerate() {
-                    s += jac.get(i * nf + c).copied().unwrap_or(0.0) * jac.get(k * nf + c).copied().unwrap_or(0.0) * w;
-                }
-                if let Some(v) = a.get_mut(i * rows + k) {
-                    *v = s;
-                }
-                if let Some(v) = a.get_mut(k * rows + i) {
-                    *v = s;
-                }
-            }
-        }
-        let diag_max = (0..rows).map(|i| a.get(i * rows + i).copied().unwrap_or(0.0)).fold(0.0f64, f64::max).max(1e-12);
         let mut improved = false;
         for _ in 0..12 {
-            let mut ad = a.clone();
-            for i in 0..rows {
-                if let Some(v) = ad.get_mut(i * rows + i) {
-                    *v += mu * diag_max;
-                }
-            }
-            let Some(y) = solve_dense(ad, r.clone(), rows) else {
-                mu *= 10.0;
-                continue;
+            let y = match &step {
+                StepJac::Dense(jac) => match dense_normal(jac, &winv, &r, rows, nf, mu) {
+                    Some(y) => y,
+                    None => {
+                        mu *= 10.0;
+                        continue;
+                    }
+                },
+                StepJac::Trips(trips) => match crate::sparse::solve_damped(rows, trips, &winv, &r, mu) {
+                    Ok(y) => y,
+                    Err(crate::sparse::FactorError::Singular) => {
+                        mu *= 10.0;
+                        continue;
+                    }
+                    Err(crate::sparse::FactorError::TooWide) => return Outcome { x, converged: false, too_wide: true },
+                },
             };
-            let mut xn = x.clone();
-            for (c, &j) in free.iter().enumerate() {
-                let mut s = 0.0;
-                for (i, yi) in y.iter().enumerate() {
-                    s += jac.get(i * nf + c).copied().unwrap_or(0.0) * yi;
-                }
-                if let Some(v) = xn.get_mut(j) {
-                    *v -= winv.get(c).copied().unwrap_or(1.0) * s;
-                }
-            }
+            let xn = descend(&x, free, &winv, &step, &y);
             rn.clear();
             f(&xn, &mut rn);
             let cn = norm2(&rn);
@@ -321,14 +343,103 @@ pub(crate) fn solve_diff(
             mu *= 10.0;
         }
         if max_abs(&r) <= tol {
-            return Outcome { x, converged: true };
+            return outcome(x, true);
         }
         if !improved {
             break;
         }
     }
-    let converged = max_abs(&r) <= tol;
-    Outcome { x, converged }
+    outcome(x, max_abs(&r) <= tol)
+}
+
+enum StepJac {
+    Dense(Vec<f64>),
+    Trips(Vec<(u32, u32, f64)>),
+}
+
+fn numeric_trips(f: &dyn Fn(&[f64], &mut Vec<f64>), x: &[f64], free: &[usize], rows: usize) -> Vec<(u32, u32, f64)> {
+    let jac = jacobian(f, x, free, rows);
+    let nf = free.len();
+    let mut trips = Vec::new();
+    for i in 0..rows {
+        for c in 0..nf {
+            let v = jac.get(i * nf + c).copied().unwrap_or(0.0);
+            if v != 0.0 && v.is_finite() {
+                let (Ok(r), Ok(col)) = (u32::try_from(i), u32::try_from(c)) else { continue };
+                trips.push((r, col, v));
+            }
+        }
+    }
+    trips
+}
+
+/// Dense `J W⁻¹ Jᵀ + μ D I`, Gaussian elimination. Same accumulation order as before the
+/// sparse factor, so a system inside [`DENSE_LIMIT`] takes the same steps.
+fn dense_normal(jac: &[f64], winv: &[f64], r: &[f64], rows: usize, nf: usize, mu: f64) -> Option<Vec<f64>> {
+    let mut a = vec![0.0; rows.saturating_mul(rows)];
+    for i in 0..rows {
+        for k in i..rows {
+            let mut s = 0.0;
+            for (c, w) in winv.iter().enumerate() {
+                s += jac.get(i * nf + c).copied().unwrap_or(0.0) * jac.get(k * nf + c).copied().unwrap_or(0.0) * w;
+            }
+            if let Some(v) = a.get_mut(i * rows + k) {
+                *v = s;
+            }
+            if let Some(v) = a.get_mut(k * rows + i) {
+                *v = s;
+            }
+        }
+    }
+    let diag_max = (0..rows).map(|i| a.get(i * rows + i).copied().unwrap_or(0.0)).fold(0.0_f64, f64::max).max(1e-12);
+    for i in 0..rows {
+        if let Some(v) = a.get_mut(i * rows + i) {
+            *v += mu * diag_max;
+        }
+    }
+    solve_dense(a, r.to_vec(), rows)
+}
+
+fn descend(x: &[f64], free: &[usize], winv: &[f64], step: &StepJac, y: &[f64]) -> Vec<f64> {
+    let mut acc = vec![0.0; free.len()];
+    match step {
+        StepJac::Dense(jac) => {
+            let nf = free.len();
+            for (c, slot) in acc.iter_mut().enumerate() {
+                for (i, yi) in y.iter().enumerate() {
+                    *slot += jac.get(i * nf + c).copied().unwrap_or(0.0) * yi;
+                }
+            }
+        }
+        StepJac::Trips(trips) => {
+            for &(r, c, v) in trips {
+                if let Some(slot) = acc.get_mut(c as usize) {
+                    *slot += v * y.get(r as usize).copied().unwrap_or(0.0);
+                }
+            }
+        }
+    }
+    let mut xn = x.to_vec();
+    for (c, &j) in free.iter().enumerate() {
+        if let Some(v) = xn.get_mut(j) {
+            *v -= winv.get(c).copied().unwrap_or(1.0) * acc.get(c).copied().unwrap_or(0.0);
+        }
+    }
+    xn
+}
+
+/// Dense Gaussian elimination of a numerical Jacobian, with no row cap below [`MAX_ROWS`].
+/// The ignored chain benchmark times this against the analytic envelope factor.
+#[cfg(test)]
+pub(crate) fn solve_dense_legacy(
+    f: &dyn Fn(&[f64], &mut Vec<f64>),
+    x0: &[f64],
+    free: &[usize],
+    weights: &[f64],
+    tol: f64,
+    max_iter: usize,
+) -> Outcome {
+    solve_loop(LoopIn { f, x0, free, weights, diff: &Diff::Numeric, tol, max_iter, force_dense: true })
 }
 
 #[cfg(test)]

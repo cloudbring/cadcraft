@@ -159,7 +159,7 @@ impl EllD {
     /// [`Ell::on`].
     pub(crate) fn on(&self, p: Dv) -> D {
         let (a, b) = self.axes();
-        if crate::curves::not_above(a.v, 1e-300) || !(b.v > 1e-300) {
+        if crate::curves::not_above(a.v, 1e-300) || crate::curves::not_above(b.v, 1e-300) {
             return p.dist(self.c).sub(a);
         }
         let u_dir = self.mj.scale(a.recip());

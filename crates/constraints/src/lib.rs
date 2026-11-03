@@ -23,6 +23,8 @@
 #![forbid(unsafe_code)]
 
 pub mod auto;
+#[cfg(test)]
+mod bench;
 mod curves;
 mod dof;
 pub mod expr;
@@ -31,6 +33,7 @@ mod jac;
 mod lm;
 mod model;
 mod residual;
+mod sparse;
 
 use std::collections::{BTreeMap, HashMap};
 
@@ -257,13 +260,16 @@ impl Comp {
     fn run(&self, skip: Option<usize>) -> Result<lm::Outcome, SolveError> {
         let free = self.free(skip);
         let rows = self.rows(skip);
-        if rows > lm::MAX_ROWS || (rows as f64) * (rows as f64) * (free.len() as f64) > 4e8 {
+        if rows > lm::MAX_ROWS {
             return Err(SolveError::TooLarge);
         }
         let included: Vec<&Built> = self.built.iter().enumerate().filter(|(i, _)| Some(*i) != skip).map(|(_, b)| b).collect();
         let f = |x: &[f64], out: &mut Vec<f64>| self.eval(x, out, skip);
         let diff = lm::Diff::Analytic { model: &self.model, built: &included };
         let mut o = lm::solve_diff(&f, &self.model.x0, &free, &self.weights, self.tol, MAX_ITER, &diff);
+        if o.too_wide {
+            return Err(SolveError::TooLarge);
+        }
         // A solution the ellipses would be stored differently from (axes swapped, minor axis
         // mirrored) holds only if the constraints still hold on the stored form: a constraint on
         // an axis end by index does not.
