@@ -747,15 +747,10 @@ pub fn add(d: &mut Drawing, mut c: Constraint, opts: &SolveOptions) -> Result<u3
         let free = comp.free(None);
         let mut ordered: Vec<&Built> = comp.built.iter().filter(|b| b.id != id).collect();
         ordered.push(nb);
-        let f = |x: &[f64], out: &mut Vec<f64>| {
-            for b in &ordered {
-                b.eval(&comp.model, x, out);
-            }
-        };
         let rows_all: usize = ordered.iter().map(|b| b.rows).sum();
         let rows_old = rows_all - nb.rows;
         let nf = free.len();
-        let jac = lm::jacobian(&f, &o.x, &free, rows_all);
+        let jac = jac::dense(&comp.model, &ordered, &o.x, &free);
         let r_all = lm::rank_qr(&jac, rows_all, nf);
         let r_old = lm::rank_qr(jac.get(..rows_old * nf).unwrap_or_default(), rows_old, nf);
         if r_all < r_old + nb.rows {
@@ -771,8 +766,8 @@ pub fn add(d: &mut Drawing, mut c: Constraint, opts: &SolveOptions) -> Result<u3
         let locked: Vec<usize> = before.iter().enumerate().filter(|(_, j)| !after.contains(j)).map(|(k, _)| k).collect();
         let rows_old = comp.rows(Some(pos));
         let nf = before.len();
-        let f = |x: &[f64], out: &mut Vec<f64>| comp.eval(x, out, Some(pos));
-        let mut jac = lm::jacobian(&f, &o.x, &before, rows_old);
+        let prior: Vec<&Built> = comp.built.iter().enumerate().filter(|(i, _)| *i != pos).map(|(_, b)| b).collect();
+        let mut jac = jac::dense(&comp.model, &prior, &o.x, &before);
         let r_old = lm::rank_qr(&jac, rows_old, nf);
         for k in &locked {
             jac.extend((0..nf).map(|c| if c == *k { 1.0 } else { 0.0 }));

@@ -1,10 +1,12 @@
 //! Degrees of freedom: how much the constraints leave the geometry free to move.
 //!
 //! Per connected component, the remaining DOF is the number of free parameters minus the rank
-//! of the constraint Jacobian at the current geometry; equations beyond the rank are redundant
-//! (over-constraint). Per object, the DOF is the dimension of the null-space motion restricted
-//! to the object's own parameters: how many independent ways the object can still move while
-//! every constraint keeps holding (the rest of its component moving along as needed).
+//! of the analytic constraint Jacobian at the current geometry (central differences only for
+//! spline end frames); equations beyond the rank are redundant (over-constraint). A finite
+//! difference at a point sitting on a centre is identically zero and used to call that
+//! radial motion redundant. Per object, the DOF is the dimension of the null-space motion
+//! restricted to the object's own parameters: how many independent ways the object can still
+//! move while every constraint keeps holding (the rest of its component moving along as needed).
 
 use std::collections::HashSet;
 
@@ -99,16 +101,22 @@ fn analyse(comp: &Comp) -> CompDof {
     if rows > lm::MAX_ROWS || (rows as f64) * (nf as f64) * (rows.min(nf) as f64) > MAX_RANK_WORK {
         return unknown;
     }
-    // Numerical differentiation evaluates every residual about `rows × free` times, and each
-    // spline-end residual reconstructs its spline through a dense solve. Account for that
-    // reconstruction cost before building the Jacobian so a component with few equations but large
-    // splines cannot pass the rank-work check yet still require billions of operations (row 43).
-    let eval_work = (rows as f64) * (nf as f64) * (1.0 + comp.built.iter().map(|b| b.spline_reconstruct_cost(&comp.model)).sum::<f64>());
-    if eval_work > MAX_EVAL_WORK {
+    // Only spline end frames are differentiated numerically, and each of those rebuilds its
+    // spline. Analytic rows do not pay that cost, so vertex constraints on a large fit spline
+    // stay analysable. A single expensive end frame still refuses before any reconstruction.
+    let fallback = comp.built.iter().filter(|b| crate::jac::is_numeric_fallback(b));
+    let mut fb_rows = 0usize;
+    let mut fb_cost = 0.0f64;
+    for b in fallback {
+        fb_rows += b.rows;
+        fb_cost += b.spline_reconstruct_cost(&comp.model);
+    }
+    let eval_work = (fb_rows as f64) * (nf as f64) * (1.0 + fb_cost);
+    if fb_rows > 0 && eval_work > MAX_EVAL_WORK {
         return unknown;
     }
-    let f = |x: &[f64], out: &mut Vec<f64>| comp.eval(x, out, None);
-    let jac = lm::jacobian(&f, &comp.model.x0, &free, rows);
+    let built: Vec<&crate::residual::Built> = comp.built.iter().collect();
+    let jac = crate::jac::dense(&comp.model, &built, &comp.model.x0, &free);
     if nf > MAX_NULL_COLS {
         let rank = lm::rank_qr(&jac, rows, nf);
         return CompDof { dof: Some(nf - rank.min(nf)), redundant: rows.saturating_sub(rank), objects: vec![None; comp.model.slots.len()] };
@@ -237,5 +245,46 @@ mod budget_tests {
         };
         let comp = Comp { model, built: vec![endpoint], weights: vec![1.0; 2], held: Vec::new(), tol: 1e-9 };
         assert!(analyse(&comp).dof.is_none());
+    }
+
+    /// A point exactly on a circle centre. Central differences of `hypot` are 0, so the
+    /// coincident row and the radius row both look like they only touch the radius and the
+    /// finite-difference rank reports one redundant equation. The analytic subgradient does not.
+    #[test]
+    fn point_at_circle_centre_is_not_reported_redundant() {
+        use cadcraft_doc::{Constraint, GeomRef, Point as DPoint};
+        use cadcraft_geom::Vec3;
+        let mut d = Drawing::default();
+        let c = d
+            .add(&Space::Model, Common::default(), EntityKind::Circle(cadcraft_doc::Circle { center: Vec3::new(0.0, 0.0, 0.0), radius: 5.0 }))
+            .unwrap();
+        let p = d.add(&Space::Model, Common::default(), EntityKind::Point(DPoint { p: Vec3::new(0.0, 0.0, 0.0), angle: 0.0 })).unwrap();
+        d.constraints.push(Constraint { id: 1, kind: ConstraintKind::Radius, refs: vec![GeomRef::whole(c)], name: String::new(), expr: "5".into() });
+        d.constraints.push(Constraint {
+            id: 2,
+            kind: ConstraintKind::Coincident,
+            refs: vec![GeomRef::whole(p), GeomRef::whole(c)],
+            name: String::new(),
+            expr: String::new(),
+        });
+        let report = dof(&d, &[]).unwrap();
+        assert_eq!(report.redundant, 0, "{report:?}");
+        assert_ne!(report.status, DofStatus::Over);
+
+        let cons: Vec<&Constraint> = d.constraints.iter().collect();
+        let (comps, skip) = crate::build(&d, &cons, &SolveOptions::default()).unwrap();
+        assert!(skip.is_empty(), "{skip:?}");
+        let comp = &comps[0];
+        let built: Vec<&crate::residual::Built> = comp.built.iter().collect();
+        let free = comp.free(None);
+        let rows = comp.rows(None);
+        let analytic = crate::jac::dense(&comp.model, &built, &comp.model.x0, &free);
+        let f = |x: &[f64], out: &mut Vec<f64>| comp.eval(x, out, None);
+        let finite = lm::jacobian(&f, &comp.model.x0, &free, rows);
+        let an_rank = lm::rank_qr(&analytic, rows, free.len());
+        let fd_rank = lm::rank_qr(&finite, rows, free.len());
+        assert_eq!(an_rank, rows, "analytic rank {an_rank}, jac {analytic:?}");
+        assert_eq!(rows - fd_rank, 1, "finite-difference rank {fd_rank} should drop the radial column");
+        assert!(an_rank > fd_rank);
     }
 }

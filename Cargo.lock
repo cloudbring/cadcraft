@@ -714,6 +714,7 @@ version = "0.17.0"
 dependencies = [
  "cadcraft-doc",
  "cadcraft-geom",
+ "proptest",
  "serde",
  "thiserror 2.0.21",
 ]

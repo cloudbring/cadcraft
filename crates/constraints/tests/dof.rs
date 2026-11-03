@@ -8,6 +8,66 @@ use cadcraft_doc::{
     GeomRef, Handle, Insert, Line as DLine, Point as DPoint, Space, Sub,
 };
 use cadcraft_geom::{Spline as GSpline, Vec2, Vec3};
+use proptest::prelude::*;
+
+#[test]
+fn centred_point_has_two_independent_constraints_and_solves() {
+    let mut drawing = Drawing::default();
+    let centre = circle(&mut drawing, (0.0, 0.0), 5.0);
+    let moving = point(&mut drawing, (0.0, 0.0));
+    for (index, mut constraint) in
+        [con(K::Fix, &[w(centre)]), con(K::Coincident, &[w(moving), w(centre)]), con(K::Horizontal, &[w(moving), s(centre, Sub::Center)])]
+            .into_iter()
+            .enumerate()
+    {
+        constraint.id = index as u32 + 1;
+        drawing.constraints.push(constraint);
+    }
+    let report = dof(&drawing, &[]).unwrap();
+    assert_eq!(report.redundant, 0, "{report:?}");
+    assert_eq!(report.dof, Some(0));
+    assert_eq!(report.status, DofStatus::Fully);
+    solve(&mut drawing, &SolveOptions::default()).unwrap();
+    assert!(all_satisfied(&drawing));
+    assert_eq!(dof(&drawing, &[]).unwrap().status, DofStatus::Fully);
+}
+
+proptest! {
+    #[test]
+    fn rigid_triangle_rank_is_invariant(
+        origin_x in -1000.0_f64..1000.0,
+        origin_y in -1000.0_f64..1000.0,
+        angle in -3.0_f64..3.0,
+        scale in 0.01_f64..100.0,
+        shear in -0.5_f64..0.5,
+    ) {
+        let mut drawing = Drawing::default();
+        let transform = |local_x: f64, local_y: f64| {
+            let rotated_x = local_x * angle.cos() - local_y * angle.sin();
+            let rotated_y = local_x * angle.sin() + local_y * angle.cos();
+            (origin_x + scale * rotated_x, origin_y + scale * rotated_y)
+        };
+        let coordinates = [transform(0.0, 0.0), transform(4.0, 0.0), transform(1.0 + shear, 3.0)];
+        let handles = coordinates.map(|position| point(&mut drawing, position));
+        for (index, (first, second)) in [(0, 1), (1, 2), (2, 0)].into_iter().enumerate() {
+            let length = (coordinates[first].0 - coordinates[second].0).hypot(coordinates[first].1 - coordinates[second].1);
+            let mut constraint = dim(K::Distance(DistAxis::Aligned), &[w(handles[first]), w(handles[second])], &length.to_string());
+            constraint.id = index as u32 + 1;
+            drawing.constraints.push(constraint);
+        }
+        let report = dof(&drawing, &[]).unwrap();
+        prop_assert_eq!(report.dof, Some(3));
+        prop_assert_eq!(report.redundant, 0);
+        prop_assert!(report.objects.iter().all(|object| object.dof == Some(2)));
+        let mut duplicate = drawing.constraints[0].clone();
+        duplicate.id = 4;
+        drawing.constraints.push(duplicate);
+        let redundant = dof(&drawing, &[]).unwrap();
+        prop_assert_eq!(redundant.dof, Some(3));
+        prop_assert_eq!(redundant.redundant, 1);
+        prop_assert_eq!(redundant.status, DofStatus::Over);
+    }
+}
 
 fn v(x: f64, y: f64) -> Vec3 {
     Vec3::new(x, y, 0.0)
