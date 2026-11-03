@@ -32,6 +32,7 @@ mod geom_d;
 mod jac;
 mod lm;
 mod model;
+mod owen;
 mod residual;
 mod sparse;
 
@@ -266,7 +267,10 @@ impl Comp {
         let included: Vec<&Built> = self.built.iter().enumerate().filter(|(i, _)| Some(*i) != skip).map(|(_, b)| b).collect();
         let f = |x: &[f64], out: &mut Vec<f64>| self.eval(x, out, skip);
         let diff = lm::Diff::Analytic { model: &self.model, built: &included };
-        let mut o = lm::solve_diff(&f, &self.model.x0, &free, &self.weights, self.tol, MAX_ITER, &diff);
+        // Rigid clusters of a determined system are solved first. Underdetermined systems start
+        // from the caller's parameters so the weighted minimum-norm step is unchanged.
+        let x_start = crate::owen::starting_x(self);
+        let mut o = lm::solve_diff(&f, &x_start, &free, &self.weights, self.tol, MAX_ITER, &diff);
         if o.too_wide {
             return Err(SolveError::TooLarge);
         }
