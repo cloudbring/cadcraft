@@ -26,6 +26,8 @@ pub mod auto;
 mod curves;
 mod dof;
 pub mod expr;
+mod geom_d;
+mod jac;
 mod lm;
 mod model;
 mod residual;
@@ -199,8 +201,9 @@ pub(crate) fn interpret(c: &Constraint, model: &mut Model, target: f64) -> Resul
     let weights = vec![1.0; model.x0.len()];
     let o = {
         let m: &Model = model;
+        let built_refs: [&Built; 1] = [&b];
         let f = |x: &[f64], out: &mut Vec<f64>| b.eval(m, x, out);
-        lm::solve(&f, &m.x0, &free, &weights, 1e-14, 60)
+        lm::solve_diff(&f, &m.x0, &free, &weights, 1e-14, 60, &lm::Diff::Analytic { model: m, built: &built_refs })
     };
     model.x0 = o.x;
     Ok(b)
@@ -257,8 +260,10 @@ impl Comp {
         if rows > lm::MAX_ROWS || (rows as f64) * (rows as f64) * (free.len() as f64) > 4e8 {
             return Err(SolveError::TooLarge);
         }
+        let included: Vec<&Built> = self.built.iter().enumerate().filter(|(i, _)| Some(*i) != skip).map(|(_, b)| b).collect();
         let f = |x: &[f64], out: &mut Vec<f64>| self.eval(x, out, skip);
-        let mut o = lm::solve(&f, &self.model.x0, &free, &self.weights, self.tol, MAX_ITER);
+        let diff = lm::Diff::Analytic { model: &self.model, built: &included };
+        let mut o = lm::solve_diff(&f, &self.model.x0, &free, &self.weights, self.tol, MAX_ITER, &diff);
         // A solution the ellipses would be stored differently from (axes swapped, minor axis
         // mirrored) holds only if the constraints still hold on the stored form: a constraint on
         // an axis end by index does not.

@@ -287,6 +287,11 @@ impl Model {
         self.slots.get(*self.index.get(&h)?)
     }
 
+    /// Block-local rigid points (rotation 0, relative to the insertion point).
+    pub(crate) fn rigid_local(&self, h: Handle) -> Option<&[Vec2]> {
+        self.rigid.get(&h).map(Vec::as_slice)
+    }
+
     /// A point-like reference.
     pub fn point(&self, x: &[f64], r: &GeomRef) -> Option<Vec2> {
         let s = self.slot(r.handle)?;
@@ -443,7 +448,7 @@ impl Model {
     }
 
     /// Vertex indices of a polyline segment.
-    fn seg(n: usize, closed: bool, i: usize) -> Option<(usize, usize)> {
+    pub(crate) fn seg(n: usize, closed: bool, i: usize) -> Option<(usize, usize)> {
         if i + 1 < n {
             Some((i, i + 1))
         } else if closed && i + 1 == n && n > 2 {

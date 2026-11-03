@@ -1,7 +1,8 @@
-//! Damped, weighted minimum-norm Gauss–Newton (Levenberg–Marquardt style) with a numerical
-//! Jacobian.
+//! Damped, weighted minimum-norm Gauss–Newton (Levenberg–Marquardt style).
 //!
-//! Each step solves `min ‖W^{1/2} Δx‖` subject to `J Δx = −r` (damped):
+//! The Jacobian is analytic ([`crate::jac`]) when the caller passes the constraint model, and
+//! central differences otherwise (spline end frames, and callers that only have a residual
+//! closure). Each step solves `min ‖W^{1/2} Δx‖` subject to `J Δx = −r` (damped):
 //! `Δx = −W⁻¹ Jᵀ (J W⁻¹ Jᵀ + μ I)⁻¹ r`. Under-constrained systems therefore move as little as
 //! possible, and heavily weighted parameters (geometry the user just edited, or the first object
 //! picked) move least.
@@ -222,8 +223,29 @@ pub(crate) fn null_space(m: &[f64], rows: usize, cols: usize) -> (usize, Vec<Vec
     (rank, basis)
 }
 
-/// Run the solver from `x0`. Only `free` parameters change.
+/// Where a step's Jacobian comes from.
+pub(crate) enum Diff<'a> {
+    /// Central differences of `f` ([`jacobian`]).
+    Numeric,
+    /// Closed-form partials. `built` is the constraints `f` evaluates, in order.
+    Analytic { model: &'a crate::model::Model, built: &'a [&'a crate::residual::Built] },
+}
+
+/// Run the solver from `x0` with a numerical Jacobian. Only `free` parameters change.
 pub(crate) fn solve(f: &dyn Fn(&[f64], &mut Vec<f64>), x0: &[f64], free: &[usize], weights: &[f64], tol: f64, max_iter: usize) -> Outcome {
+    solve_diff(f, x0, free, weights, tol, max_iter, &Diff::Numeric)
+}
+
+/// Run the solver from `x0`. Only `free` parameters change.
+pub(crate) fn solve_diff(
+    f: &dyn Fn(&[f64], &mut Vec<f64>),
+    x0: &[f64],
+    free: &[usize],
+    weights: &[f64],
+    tol: f64,
+    max_iter: usize,
+    diff: &Diff<'_>,
+) -> Outcome {
     let mut x = x0.to_vec();
     let mut r = Vec::new();
     f(&x, &mut r);
@@ -242,7 +264,10 @@ pub(crate) fn solve(f: &dyn Fn(&[f64], &mut Vec<f64>), x0: &[f64], free: &[usize
     let mut rn = Vec::with_capacity(rows);
     while iter < max_iter {
         iter += 1;
-        let jac = jacobian(f, &x, free, rows);
+        let jac = match diff {
+            Diff::Numeric => jacobian(f, &x, free, rows),
+            Diff::Analytic { model, built } => crate::jac::dense(model, built, &x, free),
+        };
         // A = J W⁻¹ Jᵀ
         let mut a = vec![0.0; rows * rows];
         for i in 0..rows {
