@@ -12,10 +12,13 @@
 
 use std::collections::HashMap;
 
+#[cfg(test)]
+use crate::line_line;
 use crate::predicates::{Orientation, orient2d, ray_crosses_right};
-use crate::{Bounds2, Line, Vec2, line_line, point_in_polygon, shoelace};
+use crate::{Bounds2, Line, Vec2, point_in_polygon, shoelace};
 
-/// Upper bound on input segments (keeps the quadratic split bounded on hostile input).
+/// Upper bound on input segments. Hostile drawings are also refused when the sweep's crossing
+/// cap is hit; this bound is what stops a drawing from being accepted at all.
 pub const MAX_SEGMENTS: usize = 60_000;
 
 /// Upper bound on islands reported for one boundary (hostile input with many tiny shapes).
@@ -62,6 +65,7 @@ struct Graph {
 }
 
 /// Records the crossing of segments `i` and `j`, if any, as split parameters on both.
+#[cfg(test)]
 fn split_pair(segs: &[(Vec2, Vec2)], splits: &mut [Vec<f64>], i: usize, j: usize) {
     let (Some(si), Some(sj)) = (segs.get(i), segs.get(j)) else { return };
     let li = Line::new(si.0, si.1);
@@ -76,7 +80,74 @@ fn split_pair(segs: &[(Vec2, Vec2)], splits: &mut [Vec<f64>], i: usize, j: usize
     }
 }
 
-fn build(polys: &[Vec<Vec2>], tol: f64) -> Option<Graph> {
+/// Uniform-grid pair tests, kept as the oracle for the sweep. `None` when the old pair cap
+/// would have refused the input.
+#[cfg(test)]
+fn fill_splits_grid(segs: &[(Vec2, Vec2)], splits: &mut [Vec<f64>]) -> Option<()> {
+    let n = segs.len();
+    if n != splits.len() {
+        return None;
+    }
+    let bb = Bounds2::from_points(segs.iter().flat_map(|(a, b)| [*a, *b]));
+    let cells = ((n as f64).sqrt().ceil() as usize).clamp(1, 512);
+    let cw = (bb.width() / cells as f64).max(1e-12);
+    let ch = (bb.height() / cells as f64).max(1e-12);
+    let cell = |p: Vec2| {
+        (
+            ((p.x - bb.min.x) / cw).floor().clamp(0.0, (cells - 1) as f64) as usize,
+            ((p.y - bb.min.y) / ch).floor().clamp(0.0, (cells - 1) as f64) as usize,
+        )
+    };
+    let mut grid: HashMap<(usize, usize), Vec<usize>> = HashMap::new();
+    let mut long: Vec<usize> = Vec::new();
+    for (i, (a, b)) in segs.iter().enumerate() {
+        let (x0, y0) = cell(a.min(*b));
+        let (x1, y1) = cell(a.max(*b));
+        if (x1 - x0 + 1) * (y1 - y0 + 1) > 4096 {
+            long.push(i);
+            continue;
+        }
+        for gx in x0..=x1 {
+            for gy in y0..=y1 {
+                grid.entry((gx, gy)).or_default().push(i);
+            }
+        }
+    }
+    let mut tested = std::collections::HashSet::new();
+    let mut visits: u64 = 0;
+    const MAX_PAIR_VISITS: u64 = 60_000_000;
+    for list in grid.values() {
+        for (k, &i) in list.iter().enumerate() {
+            for &j in list.iter().skip(k + 1) {
+                visits += 1;
+                if visits > MAX_PAIR_VISITS {
+                    return None;
+                }
+                if i == j || !tested.insert((i.min(j), i.max(j))) {
+                    continue;
+                }
+                split_pair(segs, splits, i, j);
+                if tested.len() > 20_000_000 {
+                    return None;
+                }
+            }
+        }
+    }
+    for &i in &long {
+        for j in 0..n {
+            if i == j || !tested.insert((i.min(j), i.max(j))) {
+                continue;
+            }
+            split_pair(segs, splits, i, j);
+            if tested.len() > 20_000_000 {
+                return None;
+            }
+        }
+    }
+    Some(())
+}
+
+fn assemble(polys: &[Vec<Vec2>], tol: f64, split: fn(&[(Vec2, Vec2)], &mut [Vec<f64>]) -> Option<()>) -> Option<Graph> {
     let mut segs: Vec<(Vec2, Vec2)> = Vec::new();
     let mut owner: Vec<usize> = Vec::new();
     for (k, pl) in polys.iter().enumerate() {
@@ -97,70 +168,12 @@ fn build(polys: &[Vec<Vec2>], tol: f64) -> Option<Graph> {
     if segs.is_empty() || segs.len() > MAX_SEGMENTS {
         return None;
     }
-    // Split points per segment (parameters), found with a uniform grid.
-    let bb = Bounds2::from_points(segs.iter().flat_map(|(a, b)| [*a, *b]));
+    // Split points per segment (parameters). The sweep reports the same points the uniform
+    // grid used to; `fill_splits_grid` remains as the test oracle.
     let n = segs.len();
-    let cells = ((n as f64).sqrt().ceil() as usize).clamp(1, 512);
-    let cw = (bb.width() / cells as f64).max(1e-12);
-    let ch = (bb.height() / cells as f64).max(1e-12);
-    let cell = |p: Vec2| {
-        (
-            ((p.x - bb.min.x) / cw).floor().clamp(0.0, (cells - 1) as f64) as usize,
-            ((p.y - bb.min.y) / ch).floor().clamp(0.0, (cells - 1) as f64) as usize,
-        )
-    };
-    let mut grid: HashMap<(usize, usize), Vec<usize>> = HashMap::new();
-    let mut long: Vec<usize> = Vec::new();
-    for (i, (a, b)) in segs.iter().enumerate() {
-        let (x0, y0) = cell(a.min(*b));
-        let (x1, y1) = cell(a.max(*b));
-        if (x1 - x0 + 1) * (y1 - y0 + 1) > 4096 {
-            // Very long segment: too many cells to register in; it is tested against every segment below.
-            long.push(i);
-            continue;
-        }
-        for gx in x0..=x1 {
-            for gy in y0..=y1 {
-                grid.entry((gx, gy)).or_default().push(i);
-            }
-        }
-    }
+    let bb = Bounds2::from_points(segs.iter().flat_map(|(a, b)| [*a, *b]));
     let mut splits: Vec<Vec<f64>> = vec![vec![0.0, 1.0]; n];
-    let mut tested = std::collections::HashSet::new();
-    // Count every candidate-pair *visit*, including repeats of a pair that shares several grid
-    // cells, not only the distinct pairs actually tested. A long segment replicated across many
-    // cells makes the same pair reappear in each, so a budget on distinct pairs alone leaves the
-    // repeated hashing unbounded (CWE-407).
-    let mut visits: u64 = 0;
-    const MAX_PAIR_VISITS: u64 = 60_000_000;
-    for list in grid.values() {
-        for (k, &i) in list.iter().enumerate() {
-            for &j in list.iter().skip(k + 1) {
-                visits += 1;
-                if visits > MAX_PAIR_VISITS {
-                    return None;
-                }
-                if i == j || !tested.insert((i.min(j), i.max(j))) {
-                    continue;
-                }
-                split_pair(&segs, &mut splits, i, j);
-                if tested.len() > 20_000_000 {
-                    return None;
-                }
-            }
-        }
-    }
-    for &i in &long {
-        for j in 0..n {
-            if i == j || !tested.insert((i.min(j), i.max(j))) {
-                continue;
-            }
-            split_pair(&segs, &mut splits, i, j);
-            if tested.len() > 20_000_000 {
-                return None;
-            }
-        }
-    }
+    split(&segs, &mut splits)?;
     let mut g = Graph { pts: Vec::new(), adj: Vec::new(), src: Vec::with_capacity(n), edge_src: HashMap::new() };
     let mut index: HashMap<(i64, i64), usize> = HashMap::new();
     let mut vid = |p: Vec2, g: &mut Graph| -> usize {
@@ -203,6 +216,15 @@ fn build(polys: &[Vec<Vec2>], tol: f64) -> Option<Graph> {
         }
     }
     Some(g)
+}
+
+fn build(polys: &[Vec<Vec2>], tol: f64) -> Option<Graph> {
+    assemble(polys, tol, crate::planar_sweep::fill_splits)
+}
+
+#[cfg(test)]
+fn build_grid(polys: &[Vec<Vec2>], tol: f64) -> Option<Graph> {
+    assemble(polys, tol, fill_splits_grid)
 }
 
 /// The graph of the curves with gaps of up to `gap` between open ends bridged: each open end
@@ -625,6 +647,8 @@ pub fn interior_point(poly: &[Vec2]) -> Option<Vec2> {
 
 #[cfg(test)]
 mod tests {
+    use proptest::prelude::*;
+
     use super::*;
 
     fn square(x0: f64, y0: f64, s: f64) -> Vec<Vec2> {
@@ -856,6 +880,175 @@ mod tests {
         assert!((shoelace(&l) - 20.0).abs() < 1e-6, "{}", shoelace(&l));
         // Too far away: left alone.
         assert_eq!(snap_ends(&polys, 0.01, 1e-9), polys);
+    }
+
+    fn polys_of(segs: &[(Vec2, Vec2)]) -> Vec<Vec<Vec2>> {
+        segs.iter().map(|(a, b)| vec![*a, *b]).collect()
+    }
+
+    /// Counter-clockwise faces as (area in millionths, vertex keys at `tol`).
+    fn canon_faces(g: &Graph, tol: f64) -> Vec<(i64, Vec<(i64, i64)>)> {
+        let mut seen = std::collections::HashSet::new();
+        let mut faces = Vec::new();
+        let steps = g.pts.len().saturating_mul(2).max(16);
+        for u in 0..g.adj.len() {
+            let Some(ns) = g.adj.get(u) else { continue };
+            for &v in ns {
+                if !seen.insert((u, v)) {
+                    continue;
+                }
+                let Some(ids) = trace(g, u, v, steps) else { continue };
+                let mut prev = ids.last().copied().unwrap_or(u);
+                for &cur in &ids {
+                    seen.insert((prev, cur));
+                    prev = cur;
+                }
+                let Some(lp) = points(g, &ids) else { continue };
+                let area = shoelace(&lp);
+                if !area.is_finite() || area <= 1e-8 {
+                    continue;
+                }
+                let mut verts: Vec<(i64, i64)> = lp.iter().map(|p| key(*p, Vec2::ZERO, tol)).collect();
+                verts.sort_unstable();
+                verts.dedup();
+                faces.push(((area * 1e6).round() as i64, verts));
+            }
+        }
+        faces.sort();
+        faces
+    }
+
+    fn assert_same_faces(polys: &[Vec<Vec2>], tol: f64) {
+        let sweep = build(polys, tol).expect("sweep graph");
+        let grid = build_grid(polys, tol).expect("grid graph");
+        let a = canon_faces(&sweep, tol);
+        let b = canon_faces(&grid, tol);
+        assert_eq!(a.len(), b.len(), "face count sweep {} grid {}", a.len(), b.len());
+        for (i, (fa, fb)) in a.iter().zip(b.iter()).enumerate() {
+            let area_a = fa.0 as f64 / 1e6;
+            let area_b = fb.0 as f64 / 1e6;
+            assert!((area_a - area_b).abs() <= tol.max(1e-6) * area_a.abs().max(1.0), "face {i} area {area_a} vs {area_b}");
+            assert_eq!(fa.1, fb.1, "face {i} vertices");
+        }
+    }
+
+    #[test]
+    fn sweep_and_grid_agree_on_a_cut_square() {
+        let polys = vec![square(0.0, 0.0, 10.0), vec![Vec2::new(0.0, 0.0), Vec2::new(10.0, 10.0)]];
+        assert_same_faces(&polys, 1e-9);
+    }
+
+    #[test]
+    fn sweep_and_grid_agree_on_a_fan_a_grid_and_an_overlap() {
+        let mut fan = Vec::new();
+        for i in 0..8 {
+            let a = (i as f64) * std::f64::consts::TAU / 8.0;
+            fan.push(vec![Vec2::new(-a.cos(), -a.sin()), Vec2::new(a.cos(), a.sin())]);
+        }
+        assert_same_faces(&fan, 1e-9);
+
+        let mut grid = Vec::new();
+        for i in 0..6 {
+            let t = i as f64;
+            grid.push(vec![Vec2::new(0.0, t), Vec2::new(5.0, t)]);
+            grid.push(vec![Vec2::new(t, 0.0), Vec2::new(t, 5.0)]);
+        }
+        assert_same_faces(&grid, 1e-9);
+
+        // Collinear overlap on the bottom of a square: the grid records no crossing point.
+        let overlap = vec![square(0.0, 0.0, 10.0), vec![Vec2::new(2.0, 0.0), Vec2::new(8.0, 0.0)], vec![Vec2::new(-1.0, 0.0), Vec2::new(12.0, 0.0)]];
+        assert_same_faces(&overlap, 1e-9);
+    }
+
+    #[test]
+    fn sweep_and_grid_agree_on_near_parallel_crossings() {
+        let polys = vec![
+            vec![Vec2::new(0.0, 0.0), Vec2::new(10.0, 1e-8)],
+            vec![Vec2::new(0.0, 1e-8), Vec2::new(10.0, 0.0)],
+            vec![Vec2::new(0.0, 0.0), Vec2::new(0.0, 1.0)],
+            vec![Vec2::new(10.0, -1.0), Vec2::new(10.0, 1.0)],
+            vec![Vec2::new(-1.0, 5e-9), Vec2::new(11.0, 5e-9)],
+        ];
+        assert_same_faces(&polys, 1e-6);
+    }
+
+    proptest::proptest! {
+        #[test]
+        fn sweep_matches_grid_on_random_segments(segs in proptest::collection::vec(
+            (-20.0f64..20.0, -20.0f64..20.0, -20.0f64..20.0, -20.0f64..20.0),
+            0..14,
+        )) {
+            let raw: Vec<(Vec2, Vec2)> = segs.iter().map(|(x0, y0, x1, y1)| (Vec2::new(*x0, *y0), Vec2::new(*x1, *y1))).collect();
+            let polys = polys_of(&raw);
+            let tol = 1e-6;
+            match (build(&polys, tol), build_grid(&polys, tol)) {
+                (None, None) => {}
+                (Some(sweep), Some(grid)) => {
+                    let a = canon_faces(&sweep, tol);
+                    let b = canon_faces(&grid, tol);
+                    prop_assert_eq!(a.len(), b.len());
+                    for (fa, fb) in a.iter().zip(b.iter()) {
+                        let area_a = fa.0 as f64 / 1e6;
+                        let area_b = fb.0 as f64 / 1e6;
+                        prop_assert!((area_a - area_b).abs() <= 1e-4 * area_a.abs().max(1.0));
+                        prop_assert_eq!(&fa.1, &fb.1);
+                    }
+                }
+                (sweep, grid) => prop_assert!(false, "one side refused the input {:?} {:?}", sweep.is_some(), grid.is_some()),
+            }
+        }
+    }
+
+    /// Release-only sizes. Run with
+    /// `cargo test -p cadcraft-geom --release -- --ignored planar_map_line_soup --nocapture`.
+    #[test]
+    #[ignore]
+    fn planar_map_line_soup_perf() {
+        fn rng(state: &mut u64) -> f64 {
+            *state ^= *state >> 12;
+            *state ^= *state << 25;
+            *state ^= *state >> 27;
+            (*state).wrapping_mul(0x2545_F491_4F6C_DD1D) as f64 / (1u64 << 53) as f64
+        }
+        fn random_soup(n: usize, seed: u64) -> Vec<Vec<Vec2>> {
+            let mut s = seed;
+            (0..n)
+                .map(|_| {
+                    let a = Vec2::new(rng(&mut s) * 1000.0, rng(&mut s) * 1000.0);
+                    let b = Vec2::new(rng(&mut s) * 1000.0, rng(&mut s) * 1000.0);
+                    vec![a, b]
+                })
+                .collect()
+        }
+        /// `h` horizontal and `v` vertical lines through a square: many events share an x.
+        fn dense_grid(h: usize, v: usize) -> Vec<Vec<Vec2>> {
+            let mut polys = Vec::with_capacity(h + v);
+            for i in 0..h {
+                let y = i as f64;
+                polys.push(vec![Vec2::new(0.0, y), Vec2::new(v as f64, y)]);
+            }
+            for i in 0..v {
+                let x = i as f64;
+                polys.push(vec![Vec2::new(x, 0.0), Vec2::new(x, h as f64)]);
+            }
+            polys
+        }
+        fn time(label: &str, polys: &[Vec<Vec2>]) {
+            let t = std::time::Instant::now();
+            let built = build(polys, 1e-6);
+            let ms = t.elapsed().as_secs_f64() * 1000.0;
+            let (ok, verts, edges) = match &built {
+                Some(g) => {
+                    let edges = g.adj.iter().map(|l| l.len()).sum::<usize>() / 2;
+                    (true, g.pts.len(), edges)
+                }
+                None => (false, 0, 0),
+            };
+            eprintln!("planar-map {label}: {ms:.1} ms  built={ok}  verts={verts}  edges={edges}  segments={}", polys.len());
+        }
+        time("random-20k", &random_soup(20_000, 0x15A7));
+        time("random-60k", &random_soup(60_000, 0x15A7));
+        time("grid-200x200", &dense_grid(200, 200));
     }
 
     #[test]

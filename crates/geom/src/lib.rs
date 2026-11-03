@@ -13,6 +13,7 @@ mod fillet;
 mod intersect;
 mod mat;
 mod nurbs;
+mod planar_sweep;
 pub mod predicates;
 pub mod region;
 mod spline;
