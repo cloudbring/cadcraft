@@ -1,0 +1,24 @@
+diff -ru o/crates/constraints/src/lib.rs o2/crates/constraints/src/lib.rs
+--- a/crates/constraints/src/lib.rs	2026-11-02 20:47:29
++++ b/crates/constraints/src/lib.rs	2026-11-04 16:50:19
+@@ -254,7 +254,7 @@
+     fn run(&self, skip: Option<usize>) -> Result<lm::Outcome, SolveError> {
+         let free = self.free(skip);
+         let rows = self.rows(skip);
+-        if rows > lm::MAX_ROWS || (rows as f64) * (rows as f64) * (free.len() as f64) > 4e8 {
++        if rows > lm::MAX_ROWS {
+             return Err(SolveError::TooLarge);
+         }
+         let f = |x: &[f64], out: &mut Vec<f64>| self.eval(x, out, skip);
+diff -ru o/crates/constraints/src/lm.rs o2/crates/constraints/src/lm.rs
+--- a/crates/constraints/src/lm.rs	2026-11-02 20:47:29
++++ b/crates/constraints/src/lm.rs	2026-11-04 16:50:19
+@@ -7,7 +7,7 @@
+ //! picked) move least.
+ 
+ /// Most residual rows one solve may have (the normal matrix is rows × rows).
+-pub const MAX_ROWS: usize = 800;
++pub const MAX_ROWS: usize = 20_000;
+ 
+ pub(crate) struct Outcome {
+     pub x: Vec<f64>,

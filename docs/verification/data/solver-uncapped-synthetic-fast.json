@@ -1,0 +1,3212 @@
+{
+  "schema_version": 1,
+  "name": "cadcraft solver uncapped->new [synthetic-fast]",
+  "revs": {
+    "old": "f6d84e28f31ff98224a2b63b04e5153f4899ae2b",
+    "new": "8574b50aeb852596e4e2e98204191fc23b210b9a"
+  },
+  "fingerprint": {
+    "os": "macos",
+    "arch": "aarch64",
+    "kernel": "Darwin 27.0.0",
+    "cpu_model": "Apple M6",
+    "logical_cores": 12,
+    "physical_cores": 12,
+    "ram_bytes": 34359738368,
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28) (Homebrew)",
+    "profile": "release",
+    "opt_level": "3",
+    "debug_assertions": false,
+    "date": "2026-11-04T22:21:47+00:00"
+  },
+  "config": {
+    "requested_repetitions": 10,
+    "runs_per_side": 10,
+    "warmup_runs": 2,
+    "resamples": 2000,
+    "seed": 12648430,
+    "output_checked": true,
+    "cpu_time": "process"
+  },
+  "guard": {
+    "contended": false,
+    "reasons": [],
+    "load_before": 3.11,
+    "load_after": 2.86,
+    "logical_cores": 12,
+    "max_load_per_core": 0.5,
+    "load_threshold": 6.0,
+    "throttle_before": {
+      "speed_limit_pct": null,
+      "throttle_count": null
+    },
+    "throttle_after": {
+      "speed_limit_pct": null,
+      "throttle_count": null
+    }
+  },
+  "contended": false,
+  "publishable": true,
+  "inputs": [
+    {
+      "name": "syn-chain-0050",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 547562.5,
+          "mad_ns": 5333.0,
+          "min_ns": 533250.0,
+          "max_ns": 562667.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 105229.0,
+          "mad_ns": 4874.5,
+          "min_ns": 97292.0,
+          "max_ns": 114750.0
+        },
+        "ratio": {
+          "point": 0.19217714872731423,
+          "ci_lo": 0.18138506009543232,
+          "ci_hi": 0.20254609942961443
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 547000.0,
+          "mad_ns": 5000.0,
+          "min_ns": 533000.0,
+          "max_ns": 558000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 105000.0,
+          "mad_ns": 5000.0,
+          "min_ns": 97000.0,
+          "max_ns": 116000.0
+        },
+        "ratio": {
+          "point": 0.19195612431444242,
+          "ci_lo": 0.18296712304268342,
+          "ci_hi": 0.2029520295202952
+        }
+      }
+    },
+    {
+      "name": "syn-grid-0050",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 674520.5,
+          "mad_ns": 7354.5,
+          "min_ns": 659541.0,
+          "max_ns": 688917.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 112479.5,
+          "mad_ns": 4375.5,
+          "min_ns": 107458.0,
+          "max_ns": 131208.0
+        },
+        "ratio": {
+          "point": 0.1667547539326084,
+          "ci_lo": 0.1603089532616305,
+          "ci_hi": 0.17959850252776527
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 673000.0,
+          "mad_ns": 7500.0,
+          "min_ns": 660000.0,
+          "max_ns": 690000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 112500.0,
+          "mad_ns": 3500.0,
+          "min_ns": 108000.0,
+          "max_ns": 131000.0
+        },
+        "ratio": {
+          "point": 0.16716196136701336,
+          "ci_lo": 0.16196136701337296,
+          "ci_hi": 0.17992565055762083
+        }
+      }
+    },
+    {
+      "name": "syn-mix-0050",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 1601750.0,
+          "mad_ns": 9208.5,
+          "min_ns": 1578042.0,
+          "max_ns": 1629000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 151208.0,
+          "mad_ns": 10562.5,
+          "min_ns": 137750.0,
+          "max_ns": 186416.0
+        },
+        "ratio": {
+          "point": 0.09440174808802872,
+          "ci_lo": 0.08901034379916854,
+          "ci_hi": 0.10680915950176591
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 1602000.0,
+          "mad_ns": 9500.0,
+          "min_ns": 1577000.0,
+          "max_ns": 1629000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 151000.0,
+          "mad_ns": 11000.0,
+          "min_ns": 138000.0,
+          "max_ns": 186000.0
+        },
+        "ratio": {
+          "point": 0.09425717852684144,
+          "ci_lo": 0.08904109589041095,
+          "ci_hi": 0.10763707139404995
+        }
+      }
+    },
+    {
+      "name": "syn-clustered-0050",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 328729.0,
+          "mad_ns": 4583.0,
+          "min_ns": 323167.0,
+          "max_ns": 350000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 127833.0,
+          "mad_ns": 4124.5,
+          "min_ns": 123500.0,
+          "max_ns": 158708.0
+        },
+        "ratio": {
+          "point": 0.38887046777132533,
+          "ci_lo": 0.3738670255382701,
+          "ci_hi": 0.43144030509253106
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 329000.0,
+          "mad_ns": 4500.0,
+          "min_ns": 323000.0,
+          "max_ns": 351000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 128000.0,
+          "mad_ns": 4000.0,
+          "min_ns": 124000.0,
+          "max_ns": 159000.0
+        },
+        "ratio": {
+          "point": 0.3890577507598784,
+          "ci_lo": 0.37481698389458273,
+          "ci_hi": 0.4292168674698795
+        }
+      }
+    },
+    {
+      "name": "syn-chain-0200",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 4271437.0,
+          "mad_ns": 19396.0,
+          "min_ns": 4199583.0,
+          "max_ns": 4295500.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 142729.0,
+          "mad_ns": 8541.5,
+          "min_ns": 132959.0,
+          "max_ns": 156250.0
+        },
+        "ratio": {
+          "point": 0.0334147501180516,
+          "ci_lo": 0.031359393232205365,
+          "ci_hi": 0.036429552152392075
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 4267500.0,
+          "mad_ns": 17000.0,
+          "min_ns": 4200000.0,
+          "max_ns": 4291000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 143000.0,
+          "mad_ns": 9000.0,
+          "min_ns": 133000.0,
+          "max_ns": 157000.0
+        },
+        "ratio": {
+          "point": 0.033509080257762155,
+          "ci_lo": 0.031410294848779115,
+          "ci_hi": 0.0364148948666745
+        }
+      }
+    },
+    {
+      "name": "syn-grid-0200",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 4869166.5,
+          "mad_ns": 28729.5,
+          "min_ns": 4770958.0,
+          "max_ns": 5063250.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 148979.5,
+          "mad_ns": 6000.5,
+          "min_ns": 142833.0,
+          "max_ns": 163000.0
+        },
+        "ratio": {
+          "point": 0.030596509690108152,
+          "ci_lo": 0.029402568180816983,
+          "ci_hi": 0.03229397500765056
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 4856500.0,
+          "mad_ns": 25000.0,
+          "min_ns": 4771000.0,
+          "max_ns": 5023000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 149500.0,
+          "mad_ns": 6500.0,
+          "min_ns": 143000.0,
+          "max_ns": 163000.0
+        },
+        "ratio": {
+          "point": 0.030783486049624213,
+          "ci_lo": 0.02957401772358686,
+          "ci_hi": 0.032439623413835446
+        }
+      }
+    },
+    {
+      "name": "syn-mix-0200",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 28178729.0,
+          "mad_ns": 82604.5,
+          "min_ns": 28008916.0,
+          "max_ns": 28416292.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 305000.0,
+          "mad_ns": 18145.5,
+          "min_ns": 272583.0,
+          "max_ns": 364791.0
+        },
+        "ratio": {
+          "point": 0.010823767104612844,
+          "ci_lo": 0.010056819860344032,
+          "ci_hi": 0.011440776641870634
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 28115000.0,
+          "mad_ns": 68500.0,
+          "min_ns": 27939000.0,
+          "max_ns": 28368000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 306000.0,
+          "mad_ns": 18000.0,
+          "min_ns": 273000.0,
+          "max_ns": 357000.0
+        },
+        "ratio": {
+          "point": 0.01088386982038058,
+          "ci_lo": 0.010151905879591019,
+          "ci_hi": 0.01145296105281878
+        }
+      }
+    },
+    {
+      "name": "syn-clustered-0200",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 1316770.5,
+          "mad_ns": 8104.5,
+          "min_ns": 1292541.0,
+          "max_ns": 1385834.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 505042.0,
+          "mad_ns": 8104.0,
+          "min_ns": 491584.0,
+          "max_ns": 532708.0
+        },
+        "ratio": {
+          "point": 0.38354595580626993,
+          "ci_lo": 0.3773992410005656,
+          "ci_hi": 0.39334674405660053
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 1316500.0,
+          "mad_ns": 8500.0,
+          "min_ns": 1292000.0,
+          "max_ns": 1379000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 506000.0,
+          "mad_ns": 7500.0,
+          "min_ns": 492000.0,
+          "max_ns": 533000.0
+        },
+        "ratio": {
+          "point": 0.3843524496771743,
+          "ci_lo": 0.3779467680608365,
+          "ci_hi": 0.3916030534351145
+        }
+      }
+    },
+    {
+      "name": "syn-chain-0500",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 48582562.5,
+          "mad_ns": 123500.5,
+          "min_ns": 48352334.0,
+          "max_ns": 48937500.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 380145.5,
+          "mad_ns": 6104.0,
+          "min_ns": 354041.0,
+          "max_ns": 435500.0
+        },
+        "ratio": {
+          "point": 0.007824731352941707,
+          "ci_lo": 0.007423053576992662,
+          "ci_hi": 0.007916691883845596
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 48494000.0,
+          "mad_ns": 100000.0,
+          "min_ns": 48306000.0,
+          "max_ns": 48787000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 380500.0,
+          "mad_ns": 6000.0,
+          "min_ns": 354000.0,
+          "max_ns": 431000.0
+        },
+        "ratio": {
+          "point": 0.007846331504928444,
+          "ci_lo": 0.007449632663140781,
+          "ci_hi": 0.0079477307680398
+        }
+      }
+    },
+    {
+      "name": "syn-grid-0500",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 53389750.5,
+          "mad_ns": 105520.5,
+          "min_ns": 53200417.0,
+          "max_ns": 53715000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 399271.0,
+          "mad_ns": 17228.5,
+          "min_ns": 371834.0,
+          "max_ns": 517792.0
+        },
+        "ratio": {
+          "point": 0.007478420413296369,
+          "ci_lo": 0.007132886043737212,
+          "ci_hi": 0.008280799460828882
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 53284000.0,
+          "mad_ns": 70000.0,
+          "min_ns": 53112000.0,
+          "max_ns": 53594000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 398000.0,
+          "mad_ns": 14500.0,
+          "min_ns": 373000.0,
+          "max_ns": 501000.0
+        },
+        "ratio": {
+          "point": 0.007469409203513249,
+          "ci_lo": 0.007149852520422027,
+          "ci_hi": 0.007756083408547666
+        }
+      }
+    },
+    {
+      "name": "syn-mix-0500",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 364872229.0,
+          "mad_ns": 663083.5,
+          "min_ns": 363822042.0,
+          "max_ns": 389456167.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 768521.0,
+          "mad_ns": 21312.5,
+          "min_ns": 698292.0,
+          "max_ns": 792042.0
+        },
+        "ratio": {
+          "point": 0.0021062743034904966,
+          "ci_lo": 0.0019887708493995836,
+          "ci_hi": 0.0021443579284778224
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 364143500.0,
+          "mad_ns": 442000.0,
+          "min_ns": 363222000.0,
+          "max_ns": 384553000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 762000.0,
+          "mad_ns": 21000.0,
+          "min_ns": 698000.0,
+          "max_ns": 792000.0
+        },
+        "ratio": {
+          "point": 0.002092581633339604,
+          "ci_lo": 0.0020015586305083817,
+          "ci_hi": 0.0021455402922870227
+        }
+      }
+    },
+    {
+      "name": "syn-clustered-0500",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 3391312.5,
+          "mad_ns": 12833.5,
+          "min_ns": 3356167.0,
+          "max_ns": 3529667.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 1294041.5,
+          "mad_ns": 13083.5,
+          "min_ns": 1278834.0,
+          "max_ns": 1336792.0
+        },
+        "ratio": {
+          "point": 0.381575422494978,
+          "ci_lo": 0.37607914032344386,
+          "ci_hi": 0.39089870877119265
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 3391500.0,
+          "mad_ns": 12500.0,
+          "min_ns": 3357000.0,
+          "max_ns": 3480000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 1293500.0,
+          "mad_ns": 10500.0,
+          "min_ns": 1280000.0,
+          "max_ns": 1330000.0
+        },
+        "ratio": {
+          "point": 0.38139466312840925,
+          "ci_lo": 0.378128661803453,
+          "ci_hi": 0.3902654867256637
+        }
+      }
+    },
+    {
+      "name": "syn-chain-1000",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 344893229.0,
+          "mad_ns": 434438.0,
+          "min_ns": 343954958.0,
+          "max_ns": 346224833.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 846708.5,
+          "mad_ns": 25979.5,
+          "min_ns": 770834.0,
+          "max_ns": 943250.0
+        },
+        "ratio": {
+          "point": 0.0024549873085504964,
+          "ci_lo": 0.0023339304854798357,
+          "ci_hi": 0.002507291014781935
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 344025000.0,
+          "mad_ns": 339000.0,
+          "min_ns": 343559000.0,
+          "max_ns": 345283000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 846500.0,
+          "mad_ns": 22000.0,
+          "min_ns": 771000.0,
+          "max_ns": 933000.0
+        },
+        "ratio": {
+          "point": 0.0024605769929510937,
+          "ci_lo": 0.002368525486855894,
+          "ci_hi": 0.0025017395817421685
+        }
+      }
+    },
+    {
+      "name": "syn-grid-1000",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 365820312.5,
+          "mad_ns": 286479.0,
+          "min_ns": 364925416.0,
+          "max_ns": 375316042.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 872354.5,
+          "mad_ns": 27479.5,
+          "min_ns": 843000.0,
+          "max_ns": 924125.0
+        },
+        "ratio": {
+          "point": 0.002384652984516818,
+          "ci_lo": 0.002315021105951209,
+          "ci_hi": 0.0024769897492884886
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 365023000.0,
+          "mad_ns": 451000.0,
+          "min_ns": 364096000.0,
+          "max_ns": 373487000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 872000.0,
+          "mad_ns": 27500.0,
+          "min_ns": 843000.0,
+          "max_ns": 924000.0
+        },
+        "ratio": {
+          "point": 0.0023888905630604098,
+          "ci_lo": 0.002321727573845606,
+          "ci_hi": 0.002486048525913013
+        }
+      }
+    },
+    {
+      "name": "syn-clustered-1000",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 6728729.0,
+          "mad_ns": 47083.0,
+          "min_ns": 6669959.0,
+          "max_ns": 7576792.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 2609375.0,
+          "mad_ns": 24875.0,
+          "min_ns": 2576334.0,
+          "max_ns": 2877250.0
+        },
+        "ratio": {
+          "point": 0.387796120188523,
+          "ci_lo": 0.382271277543293,
+          "ci_hi": 0.3954939144562539
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 6722000.0,
+          "mad_ns": 50500.0,
+          "min_ns": 6656000.0,
+          "max_ns": 7545000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 2609500.0,
+          "mad_ns": 21000.0,
+          "min_ns": 2577000.0,
+          "max_ns": 2836000.0
+        },
+        "ratio": {
+          "point": 0.3882029157988694,
+          "ci_lo": 0.3830063198118754,
+          "ci_hi": 0.39485074626865674
+        }
+      }
+    },
+    {
+      "name": "syn-clustered-2000",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 13554437.5,
+          "mad_ns": 99854.0,
+          "min_ns": 13317000.0,
+          "max_ns": 14208583.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 5500979.5,
+          "mad_ns": 70937.5,
+          "min_ns": 5385292.0,
+          "max_ns": 5784042.0
+        },
+        "ratio": {
+          "point": 0.405843436881833,
+          "ci_lo": 0.39913494840768193,
+          "ci_hi": 0.4125781503264947
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 13518000.0,
+          "mad_ns": 86000.0,
+          "min_ns": 13305000.0,
+          "max_ns": 14129000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 5498000.0,
+          "mad_ns": 64000.0,
+          "min_ns": 5386000.0,
+          "max_ns": 5700000.0
+        },
+        "ratio": {
+          "point": 0.4067169699659713,
+          "ci_lo": 0.3994413407821229,
+          "ci_hi": 0.4119460644106831
+        }
+      }
+    },
+    {
+      "name": "syn-clustered-5000",
+      "wall": {
+        "old": {
+          "n": 10,
+          "median_ns": 33938125.0,
+          "mad_ns": 191417.0,
+          "min_ns": 33649625.0,
+          "max_ns": 36059084.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 13660167.0,
+          "mad_ns": 90562.5,
+          "min_ns": 13547625.0,
+          "max_ns": 14408875.0
+        },
+        "ratio": {
+          "point": 0.40250211229995764,
+          "ci_lo": 0.39369413494897354,
+          "ci_hi": 0.40522068632762565
+        }
+      },
+      "cpu": {
+        "old": {
+          "n": 10,
+          "median_ns": 33875000.0,
+          "mad_ns": 196000.0,
+          "min_ns": 33615000.0,
+          "max_ns": 35955000.0
+        },
+        "new": {
+          "n": 10,
+          "median_ns": 13624500.0,
+          "mad_ns": 70000.0,
+          "min_ns": 13528000.0,
+          "max_ns": 14256000.0
+        },
+        "ratio": {
+          "point": 0.4021992619926199,
+          "ci_lo": 0.3934071638691815,
+          "ci_hi": 0.40456997214154466
+        }
+      }
+    }
+  ],
+  "aggregate": {
+    "inputs": 17,
+    "wall": {
+      "point": 0.05039065558796461,
+      "ci_lo": 0.04981906837963702,
+      "ci_hi": 0.0511055642602289
+    },
+    "cpu": {
+      "point": 0.05044355551052603,
+      "ci_lo": 0.04992466290541378,
+      "ci_hi": 0.05110473249225573
+    }
+  },
+  "runs": [
+    {
+      "order": 0,
+      "input": "syn-clustered-5000",
+      "side": "new",
+      "wall_ns": 13688334,
+      "cpu_ns": 13641000
+    },
+    {
+      "order": 1,
+      "input": "syn-clustered-5000",
+      "side": "old",
+      "wall_ns": 33868083,
+      "cpu_ns": 33827000
+    },
+    {
+      "order": 2,
+      "input": "syn-clustered-5000",
+      "side": "old",
+      "wall_ns": 33734791,
+      "cpu_ns": 33665000
+    },
+    {
+      "order": 3,
+      "input": "syn-clustered-5000",
+      "side": "new",
+      "wall_ns": 13565042,
+      "cpu_ns": 13551000
+    },
+    {
+      "order": 4,
+      "input": "syn-clustered-1000",
+      "side": "new",
+      "wall_ns": 2576334,
+      "cpu_ns": 2577000
+    },
+    {
+      "order": 5,
+      "input": "syn-clustered-1000",
+      "side": "old",
+      "wall_ns": 6669959,
+      "cpu_ns": 6656000
+    },
+    {
+      "order": 6,
+      "input": "syn-clustered-1000",
+      "side": "old",
+      "wall_ns": 6683042,
+      "cpu_ns": 6676000
+    },
+    {
+      "order": 7,
+      "input": "syn-clustered-1000",
+      "side": "new",
+      "wall_ns": 2587084,
+      "cpu_ns": 2588000
+    },
+    {
+      "order": 8,
+      "input": "syn-clustered-1000",
+      "side": "old",
+      "wall_ns": 6737291,
+      "cpu_ns": 6724000
+    },
+    {
+      "order": 9,
+      "input": "syn-clustered-1000",
+      "side": "new",
+      "wall_ns": 2593666,
+      "cpu_ns": 2594000
+    },
+    {
+      "order": 10,
+      "input": "syn-clustered-1000",
+      "side": "new",
+      "wall_ns": 2605834,
+      "cpu_ns": 2606000
+    },
+    {
+      "order": 11,
+      "input": "syn-clustered-1000",
+      "side": "old",
+      "wall_ns": 6683333,
+      "cpu_ns": 6672000
+    },
+    {
+      "order": 12,
+      "input": "syn-clustered-1000",
+      "side": "new",
+      "wall_ns": 2612916,
+      "cpu_ns": 2613000
+    },
+    {
+      "order": 13,
+      "input": "syn-clustered-1000",
+      "side": "old",
+      "wall_ns": 6680250,
+      "cpu_ns": 6671000
+    },
+    {
+      "order": 14,
+      "input": "syn-clustered-1000",
+      "side": "old",
+      "wall_ns": 6720167,
+      "cpu_ns": 6720000
+    },
+    {
+      "order": 15,
+      "input": "syn-clustered-1000",
+      "side": "new",
+      "wall_ns": 2702625,
+      "cpu_ns": 2646000
+    },
+    {
+      "order": 16,
+      "input": "syn-grid-0500",
+      "side": "new",
+      "wall_ns": 385250,
+      "cpu_ns": 386000
+    },
+    {
+      "order": 17,
+      "input": "syn-grid-0500",
+      "side": "old",
+      "wall_ns": 53200417,
+      "cpu_ns": 53112000
+    },
+    {
+      "order": 18,
+      "input": "syn-grid-0500",
+      "side": "old",
+      "wall_ns": 53391584,
+      "cpu_ns": 53230000
+    },
+    {
+      "order": 19,
+      "input": "syn-grid-0500",
+      "side": "new",
+      "wall_ns": 407208,
+      "cpu_ns": 408000
+    },
+    {
+      "order": 20,
+      "input": "syn-grid-0500",
+      "side": "old",
+      "wall_ns": 53486083,
+      "cpu_ns": 53307000
+    },
+    {
+      "order": 21,
+      "input": "syn-grid-0500",
+      "side": "new",
+      "wall_ns": 413500,
+      "cpu_ns": 413000
+    },
+    {
+      "order": 22,
+      "input": "syn-grid-0500",
+      "side": "new",
+      "wall_ns": 375291,
+      "cpu_ns": 376000
+    },
+    {
+      "order": 23,
+      "input": "syn-grid-0500",
+      "side": "old",
+      "wall_ns": 53251125,
+      "cpu_ns": 53198000
+    },
+    {
+      "order": 24,
+      "input": "syn-mix-0050",
+      "side": "new",
+      "wall_ns": 170292,
+      "cpu_ns": 172000
+    },
+    {
+      "order": 25,
+      "input": "syn-mix-0050",
+      "side": "old",
+      "wall_ns": 1612500,
+      "cpu_ns": 1613000
+    },
+    {
+      "order": 26,
+      "input": "syn-mix-0050",
+      "side": "old",
+      "wall_ns": 1597417,
+      "cpu_ns": 1598000
+    },
+    {
+      "order": 27,
+      "input": "syn-mix-0050",
+      "side": "new",
+      "wall_ns": 141500,
+      "cpu_ns": 141000
+    },
+    {
+      "order": 28,
+      "input": "syn-clustered-0500",
+      "side": "old",
+      "wall_ns": 3529667,
+      "cpu_ns": 3480000
+    },
+    {
+      "order": 29,
+      "input": "syn-clustered-0500",
+      "side": "new",
+      "wall_ns": 1292583,
+      "cpu_ns": 1292000
+    },
+    {
+      "order": 30,
+      "input": "syn-clustered-0500",
+      "side": "new",
+      "wall_ns": 1278834,
+      "cpu_ns": 1280000
+    },
+    {
+      "order": 31,
+      "input": "syn-clustered-0500",
+      "side": "old",
+      "wall_ns": 3356167,
+      "cpu_ns": 3357000
+    },
+    {
+      "order": 32,
+      "input": "syn-chain-0200",
+      "side": "old",
+      "wall_ns": 4236500,
+      "cpu_ns": 4223000
+    },
+    {
+      "order": 33,
+      "input": "syn-chain-0200",
+      "side": "new",
+      "wall_ns": 145292,
+      "cpu_ns": 146000
+    },
+    {
+      "order": 34,
+      "input": "syn-chain-0200",
+      "side": "new",
+      "wall_ns": 132959,
+      "cpu_ns": 133000
+    },
+    {
+      "order": 35,
+      "input": "syn-chain-0200",
+      "side": "old",
+      "wall_ns": 4199583,
+      "cpu_ns": 4200000
+    },
+    {
+      "order": 36,
+      "input": "syn-grid-0050",
+      "side": "new",
+      "wall_ns": 121250,
+      "cpu_ns": 122000
+    },
+    {
+      "order": 37,
+      "input": "syn-grid-0050",
+      "side": "old",
+      "wall_ns": 680792,
+      "cpu_ns": 682000
+    },
+    {
+      "order": 38,
+      "input": "syn-grid-0050",
+      "side": "old",
+      "wall_ns": 672916,
+      "cpu_ns": 673000
+    },
+    {
+      "order": 39,
+      "input": "syn-grid-0050",
+      "side": "new",
+      "wall_ns": 112667,
+      "cpu_ns": 113000
+    },
+    {
+      "order": 40,
+      "input": "syn-grid-0050",
+      "side": "new",
+      "wall_ns": 107875,
+      "cpu_ns": 109000
+    },
+    {
+      "order": 41,
+      "input": "syn-grid-0050",
+      "side": "old",
+      "wall_ns": 682500,
+      "cpu_ns": 673000
+    },
+    {
+      "order": 42,
+      "input": "syn-grid-0050",
+      "side": "old",
+      "wall_ns": 659541,
+      "cpu_ns": 660000
+    },
+    {
+      "order": 43,
+      "input": "syn-grid-0050",
+      "side": "new",
+      "wall_ns": 108333,
+      "cpu_ns": 109000
+    },
+    {
+      "order": 44,
+      "input": "syn-mix-0050",
+      "side": "new",
+      "wall_ns": 155958,
+      "cpu_ns": 156000
+    },
+    {
+      "order": 45,
+      "input": "syn-mix-0050",
+      "side": "old",
+      "wall_ns": 1617333,
+      "cpu_ns": 1618000
+    },
+    {
+      "order": 46,
+      "input": "syn-mix-0050",
+      "side": "old",
+      "wall_ns": 1594083,
+      "cpu_ns": 1594000
+    },
+    {
+      "order": 47,
+      "input": "syn-mix-0050",
+      "side": "new",
+      "wall_ns": 144334,
+      "cpu_ns": 145000
+    },
+    {
+      "order": 48,
+      "input": "syn-grid-0500",
+      "side": "new",
+      "wall_ns": 382959,
+      "cpu_ns": 384000
+    },
+    {
+      "order": 49,
+      "input": "syn-grid-0500",
+      "side": "old",
+      "wall_ns": 53512208,
+      "cpu_ns": 53406000
+    },
+    {
+      "order": 50,
+      "input": "syn-grid-0500",
+      "side": "old",
+      "wall_ns": 53275042,
+      "cpu_ns": 53170000
+    },
+    {
+      "order": 51,
+      "input": "syn-grid-0500",
+      "side": "new",
+      "wall_ns": 391334,
+      "cpu_ns": 392000
+    },
+    {
+      "order": 52,
+      "input": "syn-clustered-0200",
+      "side": "new",
+      "wall_ns": 514042,
+      "cpu_ns": 514000
+    },
+    {
+      "order": 53,
+      "input": "syn-clustered-0200",
+      "side": "old",
+      "wall_ns": 1318125,
+      "cpu_ns": 1318000
+    },
+    {
+      "order": 54,
+      "input": "syn-clustered-0200",
+      "side": "old",
+      "wall_ns": 1312166,
+      "cpu_ns": 1313000
+    },
+    {
+      "order": 55,
+      "input": "syn-clustered-0200",
+      "side": "new",
+      "wall_ns": 492083,
+      "cpu_ns": 492000
+    },
+    {
+      "order": 56,
+      "input": "syn-grid-0050",
+      "side": "new",
+      "wall_ns": 115417,
+      "cpu_ns": 116000
+    },
+    {
+      "order": 57,
+      "input": "syn-grid-0050",
+      "side": "old",
+      "wall_ns": 681250,
+      "cpu_ns": 681000
+    },
+    {
+      "order": 58,
+      "input": "syn-grid-0050",
+      "side": "old",
+      "wall_ns": 671750,
+      "cpu_ns": 672000
+    },
+    {
+      "order": 59,
+      "input": "syn-grid-0050",
+      "side": "new",
+      "wall_ns": 107458,
+      "cpu_ns": 108000
+    },
+    {
+      "order": 60,
+      "input": "syn-chain-0050",
+      "side": "new",
+      "wall_ns": 109458,
+      "cpu_ns": 110000
+    },
+    {
+      "order": 61,
+      "input": "syn-chain-0050",
+      "side": "old",
+      "wall_ns": 551875,
+      "cpu_ns": 552000
+    },
+    {
+      "order": 62,
+      "input": "syn-chain-0050",
+      "side": "old",
+      "wall_ns": 545416,
+      "cpu_ns": 545000
+    },
+    {
+      "order": 63,
+      "input": "syn-chain-0050",
+      "side": "new",
+      "wall_ns": 102459,
+      "cpu_ns": 102000
+    },
+    {
+      "order": 64,
+      "input": "syn-grid-0200",
+      "side": "new",
+      "wall_ns": 150667,
+      "cpu_ns": 151000
+    },
+    {
+      "order": 65,
+      "input": "syn-grid-0200",
+      "side": "old",
+      "wall_ns": 4877750,
+      "cpu_ns": 4861000
+    },
+    {
+      "order": 66,
+      "input": "syn-grid-0200",
+      "side": "old",
+      "wall_ns": 4851208,
+      "cpu_ns": 4852000
+    },
+    {
+      "order": 67,
+      "input": "syn-grid-0200",
+      "side": "new",
+      "wall_ns": 143125,
+      "cpu_ns": 143000
+    },
+    {
+      "order": 68,
+      "input": "syn-chain-1000",
+      "side": "new",
+      "wall_ns": 820000,
+      "cpu_ns": 820000
+    },
+    {
+      "order": 69,
+      "input": "syn-chain-1000",
+      "side": "old",
+      "wall_ns": 346224833,
+      "cpu_ns": 345283000
+    },
+    {
+      "order": 70,
+      "input": "syn-chain-1000",
+      "side": "old",
+      "wall_ns": 343959625,
+      "cpu_ns": 343640000
+    },
+    {
+      "order": 71,
+      "input": "syn-chain-1000",
+      "side": "new",
+      "wall_ns": 943250,
+      "cpu_ns": 933000
+    },
+    {
+      "order": 72,
+      "input": "syn-mix-0200",
+      "side": "old",
+      "wall_ns": 28185167,
+      "cpu_ns": 28153000
+    },
+    {
+      "order": 73,
+      "input": "syn-mix-0200",
+      "side": "new",
+      "wall_ns": 322459,
+      "cpu_ns": 322000
+    },
+    {
+      "order": 74,
+      "input": "syn-mix-0200",
+      "side": "new",
+      "wall_ns": 279750,
+      "cpu_ns": 279000
+    },
+    {
+      "order": 75,
+      "input": "syn-mix-0200",
+      "side": "old",
+      "wall_ns": 28342542,
+      "cpu_ns": 28172000
+    },
+    {
+      "order": 76,
+      "input": "syn-chain-0200",
+      "side": "new",
+      "wall_ns": 155750,
+      "cpu_ns": 155000
+    },
+    {
+      "order": 77,
+      "input": "syn-chain-0200",
+      "side": "old",
+      "wall_ns": 4295500,
+      "cpu_ns": 4279000
+    },
+    {
+      "order": 78,
+      "input": "syn-chain-0200",
+      "side": "old",
+      "wall_ns": 4285000,
+      "cpu_ns": 4285000
+    },
+    {
+      "order": 79,
+      "input": "syn-chain-0200",
+      "side": "new",
+      "wall_ns": 140917,
+      "cpu_ns": 141000
+    },
+    {
+      "order": 80,
+      "input": "syn-grid-0500",
+      "side": "old",
+      "wall_ns": 53387917,
+      "cpu_ns": 53321000
+    },
+    {
+      "order": 81,
+      "input": "syn-grid-0500",
+      "side": "new",
+      "wall_ns": 517792,
+      "cpu_ns": 501000
+    },
+    {
+      "order": 82,
+      "input": "syn-grid-0500",
+      "side": "new",
+      "wall_ns": 470750,
+      "cpu_ns": 404000
+    },
+    {
+      "order": 83,
+      "input": "syn-grid-0500",
+      "side": "old",
+      "wall_ns": 53715000,
+      "cpu_ns": 53594000
+    },
+    {
+      "order": 84,
+      "input": "syn-chain-0200",
+      "side": "old",
+      "wall_ns": 4291333,
+      "cpu_ns": 4282000
+    },
+    {
+      "order": 85,
+      "input": "syn-chain-0200",
+      "side": "new",
+      "wall_ns": 155583,
+      "cpu_ns": 156000
+    },
+    {
+      "order": 86,
+      "input": "syn-chain-0200",
+      "side": "new",
+      "wall_ns": 134125,
+      "cpu_ns": 134000
+    },
+    {
+      "order": 87,
+      "input": "syn-chain-0200",
+      "side": "old",
+      "wall_ns": 4242250,
+      "cpu_ns": 4235000
+    },
+    {
+      "order": 88,
+      "input": "syn-chain-1000",
+      "side": "old",
+      "wall_ns": 344446416,
+      "cpu_ns": 343683000
+    },
+    {
+      "order": 89,
+      "input": "syn-chain-1000",
+      "side": "new",
+      "wall_ns": 857167,
+      "cpu_ns": 858000
+    },
+    {
+      "order": 90,
+      "input": "syn-chain-1000",
+      "side": "new",
+      "wall_ns": 816708,
+      "cpu_ns": 817000
+    },
+    {
+      "order": 91,
+      "input": "syn-chain-1000",
+      "side": "old",
+      "wall_ns": 344785083,
+      "cpu_ns": 343882000
+    },
+    {
+      "order": 92,
+      "input": "syn-clustered-5000",
+      "side": "old",
+      "wall_ns": 33949708,
+      "cpu_ns": 33915000
+    },
+    {
+      "order": 93,
+      "input": "syn-clustered-5000",
+      "side": "new",
+      "wall_ns": 13836334,
+      "cpu_ns": 13762000
+    },
+    {
+      "order": 94,
+      "input": "syn-clustered-5000",
+      "side": "new",
+      "wall_ns": 13574167,
+      "cpu_ns": 13558000
+    },
+    {
+      "order": 95,
+      "input": "syn-clustered-5000",
+      "side": "old",
+      "wall_ns": 34117625,
+      "cpu_ns": 34057000
+    },
+    {
+      "order": 96,
+      "input": "syn-clustered-0200",
+      "side": "old",
+      "wall_ns": 1330750,
+      "cpu_ns": 1330000
+    },
+    {
+      "order": 97,
+      "input": "syn-clustered-0200",
+      "side": "new",
+      "wall_ns": 502083,
+      "cpu_ns": 502000
+    },
+    {
+      "order": 98,
+      "input": "syn-clustered-0200",
+      "side": "new",
+      "wall_ns": 491584,
+      "cpu_ns": 492000
+    },
+    {
+      "order": 99,
+      "input": "syn-clustered-0200",
+      "side": "old",
+      "wall_ns": 1300917,
+      "cpu_ns": 1301000
+    },
+    {
+      "order": 100,
+      "input": "syn-grid-0050",
+      "side": "new",
+      "wall_ns": 131208,
+      "cpu_ns": 131000
+    },
+    {
+      "order": 101,
+      "input": "syn-grid-0050",
+      "side": "old",
+      "wall_ns": 665500,
+      "cpu_ns": 666000
+    },
+    {
+      "order": 102,
+      "input": "syn-grid-0050",
+      "side": "old",
+      "wall_ns": 665209,
+      "cpu_ns": 665000
+    },
+    {
+      "order": 103,
+      "input": "syn-grid-0050",
+      "side": "new",
+      "wall_ns": 112125,
+      "cpu_ns": 112000
+    },
+    {
+      "order": 104,
+      "input": "syn-grid-1000",
+      "side": "new",
+      "wall_ns": 862334,
+      "cpu_ns": 862000
+    },
+    {
+      "order": 105,
+      "input": "syn-grid-1000",
+      "side": "old",
+      "wall_ns": 375316042,
+      "cpu_ns": 373487000
+    },
+    {
+      "order": 106,
+      "input": "syn-grid-1000",
+      "side": "old",
+      "wall_ns": 366013000,
+      "cpu_ns": 365348000
+    },
+    {
+      "order": 107,
+      "input": "syn-grid-1000",
+      "side": "new",
+      "wall_ns": 909667,
+      "cpu_ns": 910000
+    },
+    {
+      "order": 108,
+      "input": "syn-grid-1000",
+      "side": "new",
+      "wall_ns": 846958,
+      "cpu_ns": 848000
+    },
+    {
+      "order": 109,
+      "input": "syn-grid-1000",
+      "side": "old",
+      "wall_ns": 365959542,
+      "cpu_ns": 365600000
+    },
+    {
+      "order": 110,
+      "input": "syn-grid-1000",
+      "side": "old",
+      "wall_ns": 365910125,
+      "cpu_ns": 365188000
+    },
+    {
+      "order": 111,
+      "input": "syn-grid-1000",
+      "side": "new",
+      "wall_ns": 924125,
+      "cpu_ns": 924000
+    },
+    {
+      "order": 112,
+      "input": "syn-clustered-1000",
+      "side": "old",
+      "wall_ns": 6803583,
+      "cpu_ns": 6804000
+    },
+    {
+      "order": 113,
+      "input": "syn-clustered-1000",
+      "side": "new",
+      "wall_ns": 2877250,
+      "cpu_ns": 2836000
+    },
+    {
+      "order": 114,
+      "input": "syn-clustered-1000",
+      "side": "new",
+      "wall_ns": 2597291,
+      "cpu_ns": 2597000
+    },
+    {
+      "order": 115,
+      "input": "syn-clustered-1000",
+      "side": "old",
+      "wall_ns": 6870459,
+      "cpu_ns": 6858000
+    },
+    {
+      "order": 116,
+      "input": "syn-grid-0200",
+      "side": "new",
+      "wall_ns": 156000,
+      "cpu_ns": 156000
+    },
+    {
+      "order": 117,
+      "input": "syn-grid-0200",
+      "side": "old",
+      "wall_ns": 4875083,
+      "cpu_ns": 4877000
+    },
+    {
+      "order": 118,
+      "input": "syn-grid-0200",
+      "side": "old",
+      "wall_ns": 4863250,
+      "cpu_ns": 4847000
+    },
+    {
+      "order": 119,
+      "input": "syn-grid-0200",
+      "side": "new",
+      "wall_ns": 160250,
+      "cpu_ns": 161000
+    },
+    {
+      "order": 120,
+      "input": "syn-chain-0050",
+      "side": "old",
+      "wall_ns": 558292,
+      "cpu_ns": 558000
+    },
+    {
+      "order": 121,
+      "input": "syn-chain-0050",
+      "side": "new",
+      "wall_ns": 114375,
+      "cpu_ns": 116000
+    },
+    {
+      "order": 122,
+      "input": "syn-chain-0050",
+      "side": "new",
+      "wall_ns": 99709,
+      "cpu_ns": 100000
+    },
+    {
+      "order": 123,
+      "input": "syn-chain-0050",
+      "side": "old",
+      "wall_ns": 545333,
+      "cpu_ns": 545000
+    },
+    {
+      "order": 124,
+      "input": "syn-chain-0050",
+      "side": "old",
+      "wall_ns": 542584,
+      "cpu_ns": 542000
+    },
+    {
+      "order": 125,
+      "input": "syn-chain-0050",
+      "side": "new",
+      "wall_ns": 99083,
+      "cpu_ns": 100000
+    },
+    {
+      "order": 126,
+      "input": "syn-chain-0050",
+      "side": "new",
+      "wall_ns": 105958,
+      "cpu_ns": 106000
+    },
+    {
+      "order": 127,
+      "input": "syn-chain-0050",
+      "side": "old",
+      "wall_ns": 533250,
+      "cpu_ns": 533000
+    },
+    {
+      "order": 128,
+      "input": "syn-mix-0050",
+      "side": "old",
+      "wall_ns": 1606083,
+      "cpu_ns": 1606000
+    },
+    {
+      "order": 129,
+      "input": "syn-mix-0050",
+      "side": "new",
+      "wall_ns": 162625,
+      "cpu_ns": 163000
+    },
+    {
+      "order": 130,
+      "input": "syn-mix-0050",
+      "side": "new",
+      "wall_ns": 137750,
+      "cpu_ns": 138000
+    },
+    {
+      "order": 131,
+      "input": "syn-mix-0050",
+      "side": "old",
+      "wall_ns": 1578042,
+      "cpu_ns": 1577000
+    },
+    {
+      "order": 132,
+      "input": "syn-clustered-0050",
+      "side": "old",
+      "wall_ns": 326542,
+      "cpu_ns": 327000
+    },
+    {
+      "order": 133,
+      "input": "syn-clustered-0050",
+      "side": "new",
+      "wall_ns": 128000,
+      "cpu_ns": 128000
+    },
+    {
+      "order": 134,
+      "input": "syn-clustered-0050",
+      "side": "new",
+      "wall_ns": 123834,
+      "cpu_ns": 124000
+    },
+    {
+      "order": 135,
+      "input": "syn-clustered-0050",
+      "side": "old",
+      "wall_ns": 323167,
+      "cpu_ns": 323000
+    },
+    {
+      "order": 136,
+      "input": "syn-grid-0200",
+      "side": "old",
+      "wall_ns": 4915334,
+      "cpu_ns": 4886000
+    },
+    {
+      "order": 137,
+      "input": "syn-grid-0200",
+      "side": "new",
+      "wall_ns": 147292,
+      "cpu_ns": 148000
+    },
+    {
+      "order": 138,
+      "input": "syn-grid-0200",
+      "side": "new",
+      "wall_ns": 142833,
+      "cpu_ns": 143000
+    },
+    {
+      "order": 139,
+      "input": "syn-grid-0200",
+      "side": "old",
+      "wall_ns": 4770958,
+      "cpu_ns": 4771000
+    },
+    {
+      "order": 140,
+      "input": "syn-clustered-5000",
+      "side": "new",
+      "wall_ns": 13632000,
+      "cpu_ns": 13608000
+    },
+    {
+      "order": 141,
+      "input": "syn-clustered-5000",
+      "side": "old",
+      "wall_ns": 33917750,
+      "cpu_ns": 33819000
+    },
+    {
+      "order": 142,
+      "input": "syn-clustered-5000",
+      "side": "old",
+      "wall_ns": 33649625,
+      "cpu_ns": 33615000
+    },
+    {
+      "order": 143,
+      "input": "syn-clustered-5000",
+      "side": "new",
+      "wall_ns": 13693916,
+      "cpu_ns": 13663000
+    },
+    {
+      "order": 144,
+      "input": "syn-clustered-5000",
+      "side": "old",
+      "wall_ns": 33926542,
+      "cpu_ns": 33835000
+    },
+    {
+      "order": 145,
+      "input": "syn-clustered-5000",
+      "side": "new",
+      "wall_ns": 13547625,
+      "cpu_ns": 13528000
+    },
+    {
+      "order": 146,
+      "input": "syn-clustered-5000",
+      "side": "new",
+      "wall_ns": 13560000,
+      "cpu_ns": 13538000
+    },
+    {
+      "order": 147,
+      "input": "syn-clustered-5000",
+      "side": "old",
+      "wall_ns": 36059084,
+      "cpu_ns": 35955000
+    },
+    {
+      "order": 148,
+      "input": "syn-clustered-5000",
+      "side": "old",
+      "wall_ns": 35341666,
+      "cpu_ns": 35215000
+    },
+    {
+      "order": 149,
+      "input": "syn-clustered-5000",
+      "side": "new",
+      "wall_ns": 14408875,
+      "cpu_ns": 14256000
+    },
+    {
+      "order": 150,
+      "input": "syn-clustered-5000",
+      "side": "new",
+      "wall_ns": 13700167,
+      "cpu_ns": 13651000
+    },
+    {
+      "order": 151,
+      "input": "syn-clustered-5000",
+      "side": "old",
+      "wall_ns": 34210000,
+      "cpu_ns": 34133000
+    },
+    {
+      "order": 152,
+      "input": "syn-chain-1000",
+      "side": "old",
+      "wall_ns": 345001375,
+      "cpu_ns": 344361000
+    },
+    {
+      "order": 153,
+      "input": "syn-chain-1000",
+      "side": "new",
+      "wall_ns": 864083,
+      "cpu_ns": 864000
+    },
+    {
+      "order": 154,
+      "input": "syn-chain-1000",
+      "side": "new",
+      "wall_ns": 770834,
+      "cpu_ns": 771000
+    },
+    {
+      "order": 155,
+      "input": "syn-chain-1000",
+      "side": "old",
+      "wall_ns": 345058917,
+      "cpu_ns": 344168000
+    },
+    {
+      "order": 156,
+      "input": "syn-clustered-2000",
+      "side": "new",
+      "wall_ns": 5530083,
+      "cpu_ns": 5525000
+    },
+    {
+      "order": 157,
+      "input": "syn-clustered-2000",
+      "side": "old",
+      "wall_ns": 13613250,
+      "cpu_ns": 13562000
+    },
+    {
+      "order": 158,
+      "input": "syn-clustered-2000",
+      "side": "old",
+      "wall_ns": 13411584,
+      "cpu_ns": 13387000
+    },
+    {
+      "order": 159,
+      "input": "syn-clustered-2000",
+      "side": "new",
+      "wall_ns": 5497167,
+      "cpu_ns": 5497000
+    },
+    {
+      "order": 160,
+      "input": "syn-chain-0050",
+      "side": "new",
+      "wall_ns": 114750,
+      "cpu_ns": 115000
+    },
+    {
+      "order": 161,
+      "input": "syn-chain-0050",
+      "side": "old",
+      "wall_ns": 557250,
+      "cpu_ns": 557000
+    },
+    {
+      "order": 162,
+      "input": "syn-chain-0050",
+      "side": "old",
+      "wall_ns": 541875,
+      "cpu_ns": 542000
+    },
+    {
+      "order": 163,
+      "input": "syn-chain-0050",
+      "side": "new",
+      "wall_ns": 104500,
+      "cpu_ns": 104000
+    },
+    {
+      "order": 164,
+      "input": "syn-chain-0500",
+      "side": "new",
+      "wall_ns": 361291,
+      "cpu_ns": 362000
+    },
+    {
+      "order": 165,
+      "input": "syn-chain-0500",
+      "side": "old",
+      "wall_ns": 48352334,
+      "cpu_ns": 48306000
+    },
+    {
+      "order": 166,
+      "input": "syn-chain-0500",
+      "side": "old",
+      "wall_ns": 48524625,
+      "cpu_ns": 48422000
+    },
+    {
+      "order": 167,
+      "input": "syn-chain-0500",
+      "side": "new",
+      "wall_ns": 374459,
+      "cpu_ns": 375000
+    },
+    {
+      "order": 168,
+      "input": "syn-chain-1000",
+      "side": "new",
+      "wall_ns": 789917,
+      "cpu_ns": 790000
+    },
+    {
+      "order": 169,
+      "input": "syn-chain-1000",
+      "side": "old",
+      "wall_ns": 345397833,
+      "cpu_ns": 344327000
+    },
+    {
+      "order": 170,
+      "input": "syn-chain-1000",
+      "side": "old",
+      "wall_ns": 345181750,
+      "cpu_ns": 344704000
+    },
+    {
+      "order": 171,
+      "input": "syn-chain-1000",
+      "side": "new",
+      "wall_ns": 839083,
+      "cpu_ns": 839000
+    },
+    {
+      "order": 172,
+      "input": "syn-clustered-0050",
+      "side": "old",
+      "wall_ns": 350000,
+      "cpu_ns": 351000
+    },
+    {
+      "order": 173,
+      "input": "syn-clustered-0050",
+      "side": "new",
+      "wall_ns": 143833,
+      "cpu_ns": 144000
+    },
+    {
+      "order": 174,
+      "input": "syn-clustered-0050",
+      "side": "new",
+      "wall_ns": 124958,
+      "cpu_ns": 125000
+    },
+    {
+      "order": 175,
+      "input": "syn-clustered-0050",
+      "side": "old",
+      "wall_ns": 324042,
+      "cpu_ns": 325000
+    },
+    {
+      "order": 176,
+      "input": "syn-chain-0200",
+      "side": "old",
+      "wall_ns": 4269791,
+      "cpu_ns": 4262000
+    },
+    {
+      "order": 177,
+      "input": "syn-chain-0200",
+      "side": "new",
+      "wall_ns": 144541,
+      "cpu_ns": 145000
+    },
+    {
+      "order": 178,
+      "input": "syn-chain-0200",
+      "side": "new",
+      "wall_ns": 134500,
+      "cpu_ns": 134000
+    },
+    {
+      "order": 179,
+      "input": "syn-chain-0200",
+      "side": "old",
+      "wall_ns": 4273083,
+      "cpu_ns": 4273000
+    },
+    {
+      "order": 180,
+      "input": "syn-clustered-0200",
+      "side": "old",
+      "wall_ns": 1385834,
+      "cpu_ns": 1379000
+    },
+    {
+      "order": 181,
+      "input": "syn-clustered-0200",
+      "side": "new",
+      "wall_ns": 512250,
+      "cpu_ns": 513000
+    },
+    {
+      "order": 182,
+      "input": "syn-clustered-0200",
+      "side": "new",
+      "wall_ns": 500791,
+      "cpu_ns": 502000
+    },
+    {
+      "order": 183,
+      "input": "syn-clustered-0200",
+      "side": "old",
+      "wall_ns": 1324625,
+      "cpu_ns": 1324000
+    },
+    {
+      "order": 184,
+      "input": "syn-mix-0200",
+      "side": "old",
+      "wall_ns": 28215083,
+      "cpu_ns": 28165000
+    },
+    {
+      "order": 185,
+      "input": "syn-mix-0200",
+      "side": "new",
+      "wall_ns": 310500,
+      "cpu_ns": 312000
+    },
+    {
+      "order": 186,
+      "input": "syn-mix-0200",
+      "side": "new",
+      "wall_ns": 286459,
+      "cpu_ns": 286000
+    },
+    {
+      "order": 187,
+      "input": "syn-mix-0200",
+      "side": "old",
+      "wall_ns": 28270250,
+      "cpu_ns": 28195000
+    },
+    {
+      "order": 188,
+      "input": "syn-mix-0500",
+      "side": "old",
+      "wall_ns": 364679625,
+      "cpu_ns": 363872000
+    },
+    {
+      "order": 189,
+      "input": "syn-mix-0500",
+      "side": "new",
+      "wall_ns": 767500,
+      "cpu_ns": 768000
+    },
+    {
+      "order": 190,
+      "input": "syn-mix-0500",
+      "side": "new",
+      "wall_ns": 698292,
+      "cpu_ns": 698000
+    },
+    {
+      "order": 191,
+      "input": "syn-mix-0500",
+      "side": "old",
+      "wall_ns": 389456167,
+      "cpu_ns": 384553000
+    },
+    {
+      "order": 192,
+      "input": "syn-clustered-0200",
+      "side": "old",
+      "wall_ns": 1325125,
+      "cpu_ns": 1326000
+    },
+    {
+      "order": 193,
+      "input": "syn-clustered-0200",
+      "side": "new",
+      "wall_ns": 532708,
+      "cpu_ns": 533000
+    },
+    {
+      "order": 194,
+      "input": "syn-clustered-0200",
+      "side": "new",
+      "wall_ns": 503917,
+      "cpu_ns": 505000
+    },
+    {
+      "order": 195,
+      "input": "syn-clustered-0200",
+      "side": "old",
+      "wall_ns": 1292541,
+      "cpu_ns": 1292000
+    },
+    {
+      "order": 196,
+      "input": "syn-mix-0500",
+      "side": "new",
+      "wall_ns": 746042,
+      "cpu_ns": 746000
+    },
+    {
+      "order": 197,
+      "input": "syn-mix-0500",
+      "side": "old",
+      "wall_ns": 365064833,
+      "cpu_ns": 364173000
+    },
+    {
+      "order": 198,
+      "input": "syn-mix-0500",
+      "side": "old",
+      "wall_ns": 369219500,
+      "cpu_ns": 368288000
+    },
+    {
+      "order": 199,
+      "input": "syn-mix-0500",
+      "side": "new",
+      "wall_ns": 792042,
+      "cpu_ns": 792000
+    },
+    {
+      "order": 200,
+      "input": "syn-mix-0500",
+      "side": "old",
+      "wall_ns": 364463875,
+      "cpu_ns": 363932000
+    },
+    {
+      "order": 201,
+      "input": "syn-mix-0500",
+      "side": "new",
+      "wall_ns": 776666,
+      "cpu_ns": 777000
+    },
+    {
+      "order": 202,
+      "input": "syn-mix-0500",
+      "side": "new",
+      "wall_ns": 781541,
+      "cpu_ns": 756000
+    },
+    {
+      "order": 203,
+      "input": "syn-mix-0500",
+      "side": "old",
+      "wall_ns": 364307750,
+      "cpu_ns": 363826000
+    },
+    {
+      "order": 204,
+      "input": "syn-clustered-2000",
+      "side": "old",
+      "wall_ns": 13495625,
+      "cpu_ns": 13474000
+    },
+    {
+      "order": 205,
+      "input": "syn-clustered-2000",
+      "side": "new",
+      "wall_ns": 5568000,
+      "cpu_ns": 5545000
+    },
+    {
+      "order": 206,
+      "input": "syn-clustered-2000",
+      "side": "new",
+      "wall_ns": 5404375,
+      "cpu_ns": 5404000
+    },
+    {
+      "order": 207,
+      "input": "syn-clustered-2000",
+      "side": "old",
+      "wall_ns": 13688208,
+      "cpu_ns": 13608000
+    },
+    {
+      "order": 208,
+      "input": "syn-clustered-2000",
+      "side": "new",
+      "wall_ns": 5426125,
+      "cpu_ns": 5426000
+    },
+    {
+      "order": 209,
+      "input": "syn-clustered-2000",
+      "side": "old",
+      "wall_ns": 13494083,
+      "cpu_ns": 13447000
+    },
+    {
+      "order": 210,
+      "input": "syn-clustered-2000",
+      "side": "old",
+      "wall_ns": 13317000,
+      "cpu_ns": 13305000
+    },
+    {
+      "order": 211,
+      "input": "syn-clustered-2000",
+      "side": "new",
+      "wall_ns": 5456791,
+      "cpu_ns": 5442000
+    },
+    {
+      "order": 212,
+      "input": "syn-clustered-0500",
+      "side": "new",
+      "wall_ns": 1295500,
+      "cpu_ns": 1295000
+    },
+    {
+      "order": 213,
+      "input": "syn-clustered-0500",
+      "side": "old",
+      "wall_ns": 3393291,
+      "cpu_ns": 3393000
+    },
+    {
+      "order": 214,
+      "input": "syn-clustered-0500",
+      "side": "old",
+      "wall_ns": 3373958,
+      "cpu_ns": 3374000
+    },
+    {
+      "order": 215,
+      "input": "syn-clustered-0500",
+      "side": "new",
+      "wall_ns": 1306875,
+      "cpu_ns": 1295000
+    },
+    {
+      "order": 216,
+      "input": "syn-chain-0500",
+      "side": "new",
+      "wall_ns": 378750,
+      "cpu_ns": 379000
+    },
+    {
+      "order": 217,
+      "input": "syn-chain-0500",
+      "side": "old",
+      "wall_ns": 48508459,
+      "cpu_ns": 48393000
+    },
+    {
+      "order": 218,
+      "input": "syn-chain-0500",
+      "side": "old",
+      "wall_ns": 48479583,
+      "cpu_ns": 48431000
+    },
+    {
+      "order": 219,
+      "input": "syn-chain-0500",
+      "side": "new",
+      "wall_ns": 383667,
+      "cpu_ns": 384000
+    },
+    {
+      "order": 220,
+      "input": "syn-grid-1000",
+      "side": "old",
+      "wall_ns": 364925416,
+      "cpu_ns": 364096000
+    },
+    {
+      "order": 221,
+      "input": "syn-grid-1000",
+      "side": "new",
+      "wall_ns": 882375,
+      "cpu_ns": 882000
+    },
+    {
+      "order": 222,
+      "input": "syn-grid-1000",
+      "side": "new",
+      "wall_ns": 843000,
+      "cpu_ns": 843000
+    },
+    {
+      "order": 223,
+      "input": "syn-grid-1000",
+      "side": "old",
+      "wall_ns": 365093042,
+      "cpu_ns": 364135000
+    },
+    {
+      "order": 224,
+      "input": "syn-chain-0500",
+      "side": "new",
+      "wall_ns": 435500,
+      "cpu_ns": 431000
+    },
+    {
+      "order": 225,
+      "input": "syn-chain-0500",
+      "side": "old",
+      "wall_ns": 48937500,
+      "cpu_ns": 48787000
+    },
+    {
+      "order": 226,
+      "input": "syn-chain-0500",
+      "side": "old",
+      "wall_ns": 48726584,
+      "cpu_ns": 48593000
+    },
+    {
+      "order": 227,
+      "input": "syn-chain-0500",
+      "side": "new",
+      "wall_ns": 384250,
+      "cpu_ns": 385000
+    },
+    {
+      "order": 228,
+      "input": "syn-mix-0200",
+      "side": "new",
+      "wall_ns": 299500,
+      "cpu_ns": 300000
+    },
+    {
+      "order": 229,
+      "input": "syn-mix-0200",
+      "side": "old",
+      "wall_ns": 28172291,
+      "cpu_ns": 28077000
+    },
+    {
+      "order": 230,
+      "input": "syn-mix-0200",
+      "side": "old",
+      "wall_ns": 28105041,
+      "cpu_ns": 28000000
+    },
+    {
+      "order": 231,
+      "input": "syn-mix-0200",
+      "side": "new",
+      "wall_ns": 322750,
+      "cpu_ns": 322000
+    },
+    {
+      "order": 232,
+      "input": "syn-mix-0500",
+      "side": "old",
+      "wall_ns": 366356917,
+      "cpu_ns": 365172000
+    },
+    {
+      "order": 233,
+      "input": "syn-mix-0500",
+      "side": "new",
+      "wall_ns": 769542,
+      "cpu_ns": 771000
+    },
+    {
+      "order": 234,
+      "input": "syn-mix-0500",
+      "side": "new",
+      "wall_ns": 703792,
+      "cpu_ns": 704000
+    },
+    {
+      "order": 235,
+      "input": "syn-mix-0500",
+      "side": "old",
+      "wall_ns": 363822042,
+      "cpu_ns": 363222000
+    },
+    {
+      "order": 236,
+      "input": "syn-chain-0200",
+      "side": "old",
+      "wall_ns": 4260333,
+      "cpu_ns": 4251000
+    },
+    {
+      "order": 237,
+      "input": "syn-chain-0200",
+      "side": "new",
+      "wall_ns": 156250,
+      "cpu_ns": 157000
+    },
+    {
+      "order": 238,
+      "input": "syn-chain-0200",
+      "side": "new",
+      "wall_ns": 134250,
+      "cpu_ns": 135000
+    },
+    {
+      "order": 239,
+      "input": "syn-chain-0200",
+      "side": "old",
+      "wall_ns": 4290333,
+      "cpu_ns": 4291000
+    },
+    {
+      "order": 240,
+      "input": "syn-clustered-2000",
+      "side": "new",
+      "wall_ns": 5602167,
+      "cpu_ns": 5591000
+    },
+    {
+      "order": 241,
+      "input": "syn-clustered-2000",
+      "side": "old",
+      "wall_ns": 13654833,
+      "cpu_ns": 13627000
+    },
+    {
+      "order": 242,
+      "input": "syn-clustered-2000",
+      "side": "old",
+      "wall_ns": 14208583,
+      "cpu_ns": 14129000
+    },
+    {
+      "order": 243,
+      "input": "syn-clustered-2000",
+      "side": "new",
+      "wall_ns": 5784042,
+      "cpu_ns": 5700000
+    },
+    {
+      "order": 244,
+      "input": "syn-mix-0500",
+      "side": "new",
+      "wall_ns": 731041,
+      "cpu_ns": 730000
+    },
+    {
+      "order": 245,
+      "input": "syn-mix-0500",
+      "side": "old",
+      "wall_ns": 364505041,
+      "cpu_ns": 364114000
+    },
+    {
+      "order": 246,
+      "input": "syn-mix-0500",
+      "side": "old",
+      "wall_ns": 365633917,
+      "cpu_ns": 364710000
+    },
+    {
+      "order": 247,
+      "input": "syn-mix-0500",
+      "side": "new",
+      "wall_ns": 788667,
+      "cpu_ns": 788000
+    },
+    {
+      "order": 248,
+      "input": "syn-chain-0500",
+      "side": "old",
+      "wall_ns": 48735583,
+      "cpu_ns": 48611000
+    },
+    {
+      "order": 249,
+      "input": "syn-chain-0500",
+      "side": "new",
+      "wall_ns": 381541,
+      "cpu_ns": 382000
+    },
+    {
+      "order": 250,
+      "input": "syn-chain-0500",
+      "side": "new",
+      "wall_ns": 354041,
+      "cpu_ns": 354000
+    },
+    {
+      "order": 251,
+      "input": "syn-chain-0500",
+      "side": "old",
+      "wall_ns": 48548750,
+      "cpu_ns": 48452000
+    },
+    {
+      "order": 252,
+      "input": "syn-mix-0050",
+      "side": "new",
+      "wall_ns": 178292,
+      "cpu_ns": 178000
+    },
+    {
+      "order": 253,
+      "input": "syn-mix-0050",
+      "side": "old",
+      "wall_ns": 1606459,
+      "cpu_ns": 1607000
+    },
+    {
+      "order": 254,
+      "input": "syn-mix-0050",
+      "side": "old",
+      "wall_ns": 1580500,
+      "cpu_ns": 1580000
+    },
+    {
+      "order": 255,
+      "input": "syn-mix-0050",
+      "side": "new",
+      "wall_ns": 142958,
+      "cpu_ns": 143000
+    },
+    {
+      "order": 256,
+      "input": "syn-clustered-0050",
+      "side": "new",
+      "wall_ns": 141708,
+      "cpu_ns": 141000
+    },
+    {
+      "order": 257,
+      "input": "syn-clustered-0050",
+      "side": "old",
+      "wall_ns": 330916,
+      "cpu_ns": 331000
+    },
+    {
+      "order": 258,
+      "input": "syn-clustered-0050",
+      "side": "old",
+      "wall_ns": 324250,
+      "cpu_ns": 324000
+    },
+    {
+      "order": 259,
+      "input": "syn-clustered-0050",
+      "side": "new",
+      "wall_ns": 123500,
+      "cpu_ns": 124000
+    },
+    {
+      "order": 260,
+      "input": "syn-chain-0050",
+      "side": "old",
+      "wall_ns": 549709,
+      "cpu_ns": 550000
+    },
+    {
+      "order": 261,
+      "input": "syn-chain-0050",
+      "side": "new",
+      "wall_ns": 108833,
+      "cpu_ns": 109000
+    },
+    {
+      "order": 262,
+      "input": "syn-chain-0050",
+      "side": "new",
+      "wall_ns": 97292,
+      "cpu_ns": 97000
+    },
+    {
+      "order": 263,
+      "input": "syn-chain-0050",
+      "side": "old",
+      "wall_ns": 562667,
+      "cpu_ns": 549000
+    },
+    {
+      "order": 264,
+      "input": "syn-clustered-0500",
+      "side": "old",
+      "wall_ns": 3368542,
+      "cpu_ns": 3368000
+    },
+    {
+      "order": 265,
+      "input": "syn-clustered-0500",
+      "side": "new",
+      "wall_ns": 1291791,
+      "cpu_ns": 1292000
+    },
+    {
+      "order": 266,
+      "input": "syn-clustered-0500",
+      "side": "new",
+      "wall_ns": 1284041,
+      "cpu_ns": 1284000
+    },
+    {
+      "order": 267,
+      "input": "syn-clustered-0500",
+      "side": "old",
+      "wall_ns": 3390125,
+      "cpu_ns": 3390000
+    },
+    {
+      "order": 268,
+      "input": "syn-clustered-0200",
+      "side": "new",
+      "wall_ns": 530791,
+      "cpu_ns": 519000
+    },
+    {
+      "order": 269,
+      "input": "syn-clustered-0200",
+      "side": "old",
+      "wall_ns": 1315416,
+      "cpu_ns": 1315000
+    },
+    {
+      "order": 270,
+      "input": "syn-clustered-0200",
+      "side": "old",
+      "wall_ns": 1309791,
+      "cpu_ns": 1310000
+    },
+    {
+      "order": 271,
+      "input": "syn-clustered-0200",
+      "side": "new",
+      "wall_ns": 506167,
+      "cpu_ns": 507000
+    },
+    {
+      "order": 272,
+      "input": "syn-clustered-2000",
+      "side": "old",
+      "wall_ns": 13455125,
+      "cpu_ns": 13437000
+    },
+    {
+      "order": 273,
+      "input": "syn-clustered-2000",
+      "side": "new",
+      "wall_ns": 5504792,
+      "cpu_ns": 5499000
+    },
+    {
+      "order": 274,
+      "input": "syn-clustered-2000",
+      "side": "new",
+      "wall_ns": 5385292,
+      "cpu_ns": 5386000
+    },
+    {
+      "order": 275,
+      "input": "syn-clustered-2000",
+      "side": "old",
+      "wall_ns": 13629708,
+      "cpu_ns": 13600000
+    },
+    {
+      "order": 276,
+      "input": "syn-grid-0500",
+      "side": "new",
+      "wall_ns": 371834,
+      "cpu_ns": 373000
+    },
+    {
+      "order": 277,
+      "input": "syn-grid-0500",
+      "side": "old",
+      "wall_ns": 53475000,
+      "cpu_ns": 53300000
+    },
+    {
+      "order": 278,
+      "input": "syn-grid-0500",
+      "side": "old",
+      "wall_ns": 53349541,
+      "cpu_ns": 53268000
+    },
+    {
+      "order": 279,
+      "input": "syn-grid-0500",
+      "side": "new",
+      "wall_ns": 417416,
+      "cpu_ns": 418000
+    },
+    {
+      "order": 280,
+      "input": "syn-clustered-0500",
+      "side": "old",
+      "wall_ns": 3487167,
+      "cpu_ns": 3470000
+    },
+    {
+      "order": 281,
+      "input": "syn-clustered-0500",
+      "side": "new",
+      "wall_ns": 1329708,
+      "cpu_ns": 1330000
+    },
+    {
+      "order": 282,
+      "input": "syn-clustered-0500",
+      "side": "new",
+      "wall_ns": 1280708,
+      "cpu_ns": 1282000
+    },
+    {
+      "order": 283,
+      "input": "syn-clustered-0500",
+      "side": "old",
+      "wall_ns": 3392500,
+      "cpu_ns": 3393000
+    },
+    {
+      "order": 284,
+      "input": "syn-grid-0200",
+      "side": "new",
+      "wall_ns": 155375,
+      "cpu_ns": 156000
+    },
+    {
+      "order": 285,
+      "input": "syn-grid-0200",
+      "side": "old",
+      "wall_ns": 4905917,
+      "cpu_ns": 4895000
+    },
+    {
+      "order": 286,
+      "input": "syn-grid-0200",
+      "side": "old",
+      "wall_ns": 4825625,
+      "cpu_ns": 4818000
+    },
+    {
+      "order": 287,
+      "input": "syn-grid-0200",
+      "side": "new",
+      "wall_ns": 143166,
+      "cpu_ns": 144000
+    },
+    {
+      "order": 288,
+      "input": "syn-clustered-1000",
+      "side": "old",
+      "wall_ns": 6748917,
+      "cpu_ns": 6739000
+    },
+    {
+      "order": 289,
+      "input": "syn-clustered-1000",
+      "side": "new",
+      "wall_ns": 2644708,
+      "cpu_ns": 2645000
+    },
+    {
+      "order": 290,
+      "input": "syn-clustered-1000",
+      "side": "new",
+      "wall_ns": 2636834,
+      "cpu_ns": 2630000
+    },
+    {
+      "order": 291,
+      "input": "syn-clustered-1000",
+      "side": "old",
+      "wall_ns": 7576792,
+      "cpu_ns": 7545000
+    },
+    {
+      "order": 292,
+      "input": "syn-grid-0200",
+      "side": "old",
+      "wall_ns": 5063250,
+      "cpu_ns": 5023000
+    },
+    {
+      "order": 293,
+      "input": "syn-grid-0200",
+      "side": "new",
+      "wall_ns": 163000,
+      "cpu_ns": 163000
+    },
+    {
+      "order": 294,
+      "input": "syn-grid-0200",
+      "side": "new",
+      "wall_ns": 145416,
+      "cpu_ns": 146000
+    },
+    {
+      "order": 295,
+      "input": "syn-grid-0200",
+      "side": "old",
+      "wall_ns": 4848458,
+      "cpu_ns": 4848000
+    },
+    {
+      "order": 296,
+      "input": "syn-grid-0050",
+      "side": "old",
+      "wall_ns": 688917,
+      "cpu_ns": 690000
+    },
+    {
+      "order": 297,
+      "input": "syn-grid-0050",
+      "side": "new",
+      "wall_ns": 120750,
+      "cpu_ns": 121000
+    },
+    {
+      "order": 298,
+      "input": "syn-grid-0050",
+      "side": "new",
+      "wall_ns": 112292,
+      "cpu_ns": 112000
+    },
+    {
+      "order": 299,
+      "input": "syn-grid-0050",
+      "side": "old",
+      "wall_ns": 676125,
+      "cpu_ns": 676000
+    },
+    {
+      "order": 300,
+      "input": "syn-mix-0200",
+      "side": "new",
+      "wall_ns": 364791,
+      "cpu_ns": 357000
+    },
+    {
+      "order": 301,
+      "input": "syn-mix-0200",
+      "side": "old",
+      "wall_ns": 28416292,
+      "cpu_ns": 28368000
+    },
+    {
+      "order": 302,
+      "input": "syn-mix-0200",
+      "side": "old",
+      "wall_ns": 28115084,
+      "cpu_ns": 28073000
+    },
+    {
+      "order": 303,
+      "input": "syn-mix-0200",
+      "side": "new",
+      "wall_ns": 313333,
+      "cpu_ns": 313000
+    },
+    {
+      "order": 304,
+      "input": "syn-clustered-0050",
+      "side": "old",
+      "wall_ns": 337541,
+      "cpu_ns": 338000
+    },
+    {
+      "order": 305,
+      "input": "syn-clustered-0050",
+      "side": "new",
+      "wall_ns": 132083,
+      "cpu_ns": 132000
+    },
+    {
+      "order": 306,
+      "input": "syn-clustered-0050",
+      "side": "new",
+      "wall_ns": 125292,
+      "cpu_ns": 126000
+    },
+    {
+      "order": 307,
+      "input": "syn-clustered-0050",
+      "side": "old",
+      "wall_ns": 332708,
+      "cpu_ns": 333000
+    },
+    {
+      "order": 308,
+      "input": "syn-mix-0200",
+      "side": "old",
+      "wall_ns": 28008916,
+      "cpu_ns": 27939000
+    },
+    {
+      "order": 309,
+      "input": "syn-mix-0200",
+      "side": "new",
+      "wall_ns": 285083,
+      "cpu_ns": 286000
+    },
+    {
+      "order": 310,
+      "input": "syn-mix-0200",
+      "side": "new",
+      "wall_ns": 272583,
+      "cpu_ns": 273000
+    },
+    {
+      "order": 311,
+      "input": "syn-mix-0200",
+      "side": "old",
+      "wall_ns": 28026333,
+      "cpu_ns": 27986000
+    },
+    {
+      "order": 312,
+      "input": "syn-grid-1000",
+      "side": "old",
+      "wall_ns": 366310875,
+      "cpu_ns": 365611000
+    },
+    {
+      "order": 313,
+      "input": "syn-grid-1000",
+      "side": "new",
+      "wall_ns": 901500,
+      "cpu_ns": 902000
+    },
+    {
+      "order": 314,
+      "input": "syn-grid-1000",
+      "side": "new",
+      "wall_ns": 846541,
+      "cpu_ns": 846000
+    },
+    {
+      "order": 315,
+      "input": "syn-grid-1000",
+      "side": "old",
+      "wall_ns": 365730500,
+      "cpu_ns": 364858000
+    },
+    {
+      "order": 316,
+      "input": "syn-clustered-0050",
+      "side": "new",
+      "wall_ns": 158708,
+      "cpu_ns": 159000
+    },
+    {
+      "order": 317,
+      "input": "syn-clustered-0050",
+      "side": "old",
+      "wall_ns": 345125,
+      "cpu_ns": 345000
+    },
+    {
+      "order": 318,
+      "input": "syn-clustered-0050",
+      "side": "old",
+      "wall_ns": 324333,
+      "cpu_ns": 325000
+    },
+    {
+      "order": 319,
+      "input": "syn-clustered-0050",
+      "side": "new",
+      "wall_ns": 127666,
+      "cpu_ns": 128000
+    },
+    {
+      "order": 320,
+      "input": "syn-chain-1000",
+      "side": "new",
+      "wall_ns": 871959,
+      "cpu_ns": 860000
+    },
+    {
+      "order": 321,
+      "input": "syn-chain-1000",
+      "side": "old",
+      "wall_ns": 344471166,
+      "cpu_ns": 343823000
+    },
+    {
+      "order": 322,
+      "input": "syn-chain-1000",
+      "side": "old",
+      "wall_ns": 343954958,
+      "cpu_ns": 343559000
+    },
+    {
+      "order": 323,
+      "input": "syn-chain-1000",
+      "side": "new",
+      "wall_ns": 854334,
+      "cpu_ns": 854000
+    },
+    {
+      "order": 324,
+      "input": "syn-grid-1000",
+      "side": "old",
+      "wall_ns": 365566834,
+      "cpu_ns": 364703000
+    },
+    {
+      "order": 325,
+      "input": "syn-grid-1000",
+      "side": "new",
+      "wall_ns": 905708,
+      "cpu_ns": 907000
+    },
+    {
+      "order": 326,
+      "input": "syn-grid-1000",
+      "side": "new",
+      "wall_ns": 860000,
+      "cpu_ns": 860000
+    },
+    {
+      "order": 327,
+      "input": "syn-grid-1000",
+      "side": "old",
+      "wall_ns": 365500833,
+      "cpu_ns": 364814000
+    },
+    {
+      "order": 328,
+      "input": "syn-mix-0050",
+      "side": "old",
+      "wall_ns": 1629000,
+      "cpu_ns": 1629000
+    },
+    {
+      "order": 329,
+      "input": "syn-mix-0050",
+      "side": "new",
+      "wall_ns": 186416,
+      "cpu_ns": 186000
+    },
+    {
+      "order": 330,
+      "input": "syn-mix-0050",
+      "side": "new",
+      "wall_ns": 146458,
+      "cpu_ns": 146000
+    },
+    {
+      "order": 331,
+      "input": "syn-mix-0050",
+      "side": "old",
+      "wall_ns": 1594416,
+      "cpu_ns": 1595000
+    },
+    {
+      "order": 332,
+      "input": "syn-chain-0500",
+      "side": "old",
+      "wall_ns": 48906042,
+      "cpu_ns": 48784000
+    },
+    {
+      "order": 333,
+      "input": "syn-chain-0500",
+      "side": "new",
+      "wall_ns": 386667,
+      "cpu_ns": 387000
+    },
+    {
+      "order": 334,
+      "input": "syn-chain-0500",
+      "side": "new",
+      "wall_ns": 356375,
+      "cpu_ns": 356000
+    },
+    {
+      "order": 335,
+      "input": "syn-chain-0500",
+      "side": "old",
+      "wall_ns": 48616375,
+      "cpu_ns": 48536000
+    },
+    {
+      "order": 336,
+      "input": "syn-clustered-0500",
+      "side": "old",
+      "wall_ns": 3394584,
+      "cpu_ns": 3395000
+    },
+    {
+      "order": 337,
+      "input": "syn-clustered-0500",
+      "side": "new",
+      "wall_ns": 1323334,
+      "cpu_ns": 1323000
+    },
+    {
+      "order": 338,
+      "input": "syn-clustered-0500",
+      "side": "new",
+      "wall_ns": 1336792,
+      "cpu_ns": 1324000
+    },
+    {
+      "order": 339,
+      "input": "syn-clustered-0500",
+      "side": "old",
+      "wall_ns": 3383000,
+      "cpu_ns": 3384000
+    }
+  ]
+}

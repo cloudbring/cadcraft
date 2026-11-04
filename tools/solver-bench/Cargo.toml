@@ -1,0 +1,53 @@
+# Standalone harness for artcraft-algorithms#191. Own workspace: it is not a member of the
+# cadcraft workspace and nothing here ships.
+[workspace]
+exclude = [".old-uncapped"]
+
+[package]
+name = "solver-bench"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+serde_json = "1"
+craft-bench = { git = "https://github.com/cloudbring/craft-libs", rev = "2c2c69b4963ff5afb612152143ecd0ccd3b925cf" }
+
+# OLD: the merge-base of the #16 branch with storytold/cadcraft main.
+old-constraints = { package = "cadcraft-constraints", git = "https://github.com/storytold/cadcraft", rev = "f6d84e28f31ff98224a2b63b04e5153f4899ae2b" }
+old-doc = { package = "cadcraft-doc", git = "https://github.com/storytold/cadcraft", rev = "f6d84e28f31ff98224a2b63b04e5153f4899ae2b" }
+# OLDX: OLD with the 800-row cap and the 4e8 work gate removed (see old-uncapped.patch).
+oldx-constraints = { package = "cadcraft-constraints-oldx", path = ".old-uncapped/crates/constraints" }
+oldx-doc = { package = "cadcraft-doc-oldx", path = ".old-uncapped/crates/doc" }
+# NEW: this branch.
+new-constraints = { package = "cadcraft-constraints", path = "../../crates/constraints" }
+new-doc = { package = "cadcraft-doc", path = "../../crates/doc" }
+new-io = { package = "cadcraft-io", path = "../../crates/io" }
+
+[patch.crates-io]
+krilla = { version = "=0.8.2", git = "https://github.com/storytold/craft-libs", rev = "92d392cff132eaf53e13afff77f38b5c11b73aa0" }
+hayro-syntax = { git = "https://github.com/storytold/craft-libs", rev = "92d392cff132eaf53e13afff77f38b5c11b73aa0" }
+hayro-jbig2 = { git = "https://github.com/storytold/craft-libs", rev = "92d392cff132eaf53e13afff77f38b5c11b73aa0" }
+
+# Keep the complete egui family and native event bridge on reviewed fork commits.
+ecolor = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+emath = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+epaint = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+epaint_default_fonts = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui-winit = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui-wgpu = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_glow = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_extras = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_kittest = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_system_font_provider = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+eframe = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_demo_lib = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_inspection = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+winit = { git = "https://github.com/storytold/winit.git", rev = "a517b3846ee8457d84ee4975110bfda6797c44dc" }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 16
+debug = 0
