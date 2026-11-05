@@ -2,6 +2,7 @@ mod aci7_display;
 mod annotative_orientation;
 mod annotative_viewport;
 mod dim_angular_centre;
+mod dim_angular_shared_endpoint;
 mod dim_post_tolerance;
 mod dim_text_fill;
 mod dim_text_format;

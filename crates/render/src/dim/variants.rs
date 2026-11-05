@@ -168,7 +168,24 @@ pub(super) fn draw_angular(config: &DimConfig<'_>, g: &mut DimGeometry, text_ang
         (d.p15.xy(), d.p13.xy(), d.p14.xy(), d.defpt.xy())
     } else {
         let v = cadcraft_geom::line_line_infinite(d.p13.xy(), d.p14.xy(), d.defpt.xy(), d.p15.xy()).map(|x| x.0).unwrap_or(d.p14.xy());
-        (v, d.p14.xy(), d.p15.xy(), d.p16.xy())
+        // The legs end at 14 and 15; when a line starts at the vertex (so 14 or 15 is the vertex),
+        // its far end is the other point of the line: 13, or the one in group 10.
+        let leg = |end: Vec2, other: Vec2| if end.dist(v) > 1e-9 { end } else { other };
+        let (f1, f2) = (leg(d.p14.xy(), d.p13.xy()), leg(d.p15.xy(), d.defpt.xy()));
+        // Two lines make four angles at the vertex; the dimension measures the one the arc
+        // location (16) is in, which may lie on the far side of either line from its end point.
+        let t = v.angle_to(d.p16.xy());
+        let opposite = |p: Vec2| v - (p - v);
+        let in_sector = |a: Vec2, b: Vec2| {
+            let (s, e) = (v.angle_to(a), v.angle_to(b));
+            let (s, e) = if ccw_sweep(s, e) <= std::f64::consts::PI { (s, e) } else { (e, s) };
+            cadcraft_geom::angle_in_sweep(t, s, e)
+        };
+        let (a1, a2) = [(f1, f2), (opposite(f1), f2), (f1, opposite(f2)), (opposite(f1), opposite(f2))]
+            .into_iter()
+            .find(|&(a, b)| in_sector(a, b))
+            .unwrap_or((f1, f2));
+        (v, a1, a2, d.p16.xy())
     };
     let r = vertex.dist(arc_pt).max(1e-9);
     let s = vertex.angle_to(a1);

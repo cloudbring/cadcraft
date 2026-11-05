@@ -1,0 +1,49 @@
+name: DXF oracle
+
+# Compares cadcraft's DXF import and export with ezdxf over the pinned cad-ezdxf corpus
+# (tools/dxf-oracle, ticket cloudbring/artcraft-algorithms#196) and enforces tools/dxf-oracle/floors.json.
+# Path-filtered: it runs only when DXF code or the oracle changes.
+on:
+  pull_request:
+    paths:
+      - "crates/dxf/**"
+      - "crates/io/**"
+      - "crates/doc/**"
+      - "crates/render/**"
+      - "tools/dxf-oracle/**"
+      - ".github/workflows/dxf-oracle.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  oracle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install ezdxf (pinned)
+        run: python -m venv "$RUNNER_TEMP/venv" && "$RUNNER_TEMP/venv/bin/pip" install ezdxf==1.4.5
+      - name: Fetch the pinned corpus (mozman/ezdxf, MIT)
+        run: |
+          mkdir "$RUNNER_TEMP/ezdxf-src" && cd "$RUNNER_TEMP/ezdxf-src"
+          git init -q && git remote add origin https://github.com/mozman/ezdxf.git
+          git fetch -q --depth 1 origin c498560bb491c357deda538360ed0c8fdb11f5a7
+          git checkout -q FETCH_HEAD
+      - name: Run the oracle and check the floors
+        env:
+          DXF_ORACLE_PYTHON: ${{ runner.temp }}/venv/bin/python
+          DXF_ORACLE_CORPUS: ${{ runner.temp }}/ezdxf-src
+          DXF_ORACLE_WORK: ${{ runner.temp }}/dxf-oracle
+        run: tools/dxf-oracle/run.sh --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dxf-oracle-report
+          path: docs/verification/dxf-oracle.md

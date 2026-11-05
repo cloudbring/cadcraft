@@ -379,7 +379,7 @@ impl<'a> Cur<'a> {
     }
 }
 
-/// Binary DXF (R13+: 2-byte group codes).
+/// Binary DXF (R13+: 2-byte group codes; R12 and older: one byte, 255 introducing a 2-byte code).
 pub fn parse_binary(b: &[u8]) -> Result<Vec<Tag>> {
     parse_binary_with_limit(b, max_tags())
 }
@@ -388,8 +388,11 @@ fn parse_binary_with_limit(b: &[u8], max_tags: usize) -> Result<Vec<Tag>> {
     let mut c = Cur { b, p: 0 };
     let mut text = codepage::BinaryText::default();
     let mut tags = Vec::new();
+    // A file starts with group 0 ("SECTION"): R13+ writes the code as `00 00`, R12 as `00` and
+    // the text follows at once.
+    let one_byte_codes = b.first() == Some(&0) && b.get(1).is_some_and(u8::is_ascii_alphabetic);
     while c.p < b.len() {
-        let mut code = i32::from(c.i16()?);
+        let mut code = if one_byte_codes { i32::from(c.u8()?) } else { i32::from(c.i16()?) };
         if code == 255 {
             code = i32::from(c.i16()?);
         }
