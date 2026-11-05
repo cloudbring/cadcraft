@@ -60,11 +60,13 @@ What the Rust code does (branch `algo/16-analytic-jacobian`, `crates/constraints
 ## NOT proved
 
 * Floating point. Everything is exact. The solver's tolerances are not modelled: pivots are cut at
-  `1e-7` relative / `1e-12` absolute, and in `balanced_rows` a column whose norm after row balancing is
-  at most `COL_NOISE = 1e-6` is *zeroed* (not scaled). That last step is not a rank-preserving
-  scaling; for an exact Jacobian it can lower the rank. Vector `tol_1e9` (exact rank 2) is pinned as a
-  divergence: the solver reports 1. For analytic Jacobians the exact-zero entries are exactly zero, so
-  the zeroing is never needed there; it only matters for numerical-difference noise.
+  `1e-7` relative / `1e-12` absolute, in `balanced_rows` a column whose norm after row
+  balancing is at most the noise threshold is *zeroed* (not scaled). That step is not a rank-preserving
+  scaling. The threshold is `COL_NOISE = 1e-6` where the Jacobian has finite-difference rows or is
+  evaluated at a converged point (redundancy checks in `add`), and `ANALYTIC_NOISE = 1e-12` for DOF
+  reports of analytic Jacobians at the drawn geometry, so a tiny but real column survives. Vector `tol_1e9`
+  (exact rank 2) is now reported as rank 2 by the analytic path; the `COL_NOISE` path still reports 1, which
+  the Rust test pins.
 * Householder QR itself is not formalised; the modelled elimination is the Gram-Schmidt
   equivalent, whose pivot norms equal the QR ones in exact arithmetic (stated, not proved).
 * Banded structure: that the Cholesky factor of `P A P^T` stays within the RCM bandwidth, the RCM
@@ -91,7 +93,7 @@ What the Rust code does (branch `algo/16-analytic-jacobian`, `crates/constraints
 ## Rust checks (`crates/constraints/src/lean_vectors.rs`, `cargo test -p cadcraft-constraints`)
 
 1. `rank_and_dof_match_exact_lean_values`: `lm::rank_qr` (the solver's tolerance) equals the exact rank
-   on every non-`tolerance` row, and is strictly below it on `tol_1e9`.
+   on every non-`tolerance` row, and on `tol_1e9` with the analytic threshold; the finite-difference threshold is strictly below it there.
 2. `rank_is_invariant_under_permutation_and_scaling`: random row/column permutations and 1e-2..1e2
    row/column scalings leave `rank_qr` unchanged.
 3. `sketch_jacobians_and_dof_match_cadcraft`: each sketch is rebuilt, its analytic Jacobian equals the CSV

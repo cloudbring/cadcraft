@@ -57,7 +57,7 @@ pub(crate) fn decompose(comp: &Comp) -> Decomp {
         && {
             let built: Vec<&Built> = comp.built.iter().collect();
             let jacobian = crate::jac::dense(&comp.model, &built, &comp.model.x0, &free);
-            lm::rank_qr(&jacobian, rows, free.len()) == free.len()
+            lm::rank_qr(&jacobian, rows, free.len(), lm::COL_NOISE) == free.len()
         };
     Decomp { rigid, warm }
 }

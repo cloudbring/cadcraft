@@ -178,7 +178,7 @@ fn reflect(v: &[f64], vv: f64, c: &mut [f64]) {
 
 /// Rows and columns scaled to unit norm (zero ones left alone), as columns of the transpose:
 /// `out[i]` is row `i` of the row-major `rows × cols` matrix `m`.
-fn balanced_rows(m: &[f64], rows: usize, cols: usize) -> Vec<Vec<f64>> {
+fn balanced_rows(m: &[f64], rows: usize, cols: usize, noise: f64) -> Vec<Vec<f64>> {
     let mut r: Vec<Vec<f64>> = (0..rows).map(|i| m.get(i * cols..(i + 1) * cols).map(<[f64]>::to_vec).unwrap_or_else(|| vec![0.0; cols])).collect();
     for row in &mut r {
         let n = norm2(row).sqrt();
@@ -189,7 +189,7 @@ fn balanced_rows(m: &[f64], rows: usize, cols: usize) -> Vec<Vec<f64>> {
     // differences), which scaling would turn into a spurious independent direction.
     for c in 0..cols {
         let n = r.iter().map(|row| row.get(c).map_or(0.0, |v| v * v)).sum::<f64>().sqrt();
-        let f = if n > COL_NOISE && n.is_finite() { 1.0 / n } else { 0.0 };
+        let f = if n > noise && n.is_finite() { 1.0 / n } else { 0.0 };
         for row in &mut r {
             if let Some(v) = row.get_mut(c) {
                 *v *= f;
@@ -199,26 +199,35 @@ fn balanced_rows(m: &[f64], rows: usize, cols: usize) -> Vec<Vec<f64>> {
     r
 }
 
-/// Column norm (after row balancing) below which a column is difference noise.
-const COL_NOISE: f64 = 1e-6;
+/// Column norm (after row balancing) below which a finite-difference column is noise.
+pub(crate) const COL_NOISE: f64 = 1e-6;
+/// The same cut for an analytic Jacobian: only rounding residue of an exact zero, so small but
+/// real columns (a tolerance-scale coefficient) keep their rank.
+pub(crate) const ANALYTIC_NOISE: f64 = 1e-12;
+
+/// Column noise threshold for a Jacobian assembled from `built`: finite-difference noise only
+/// exists when some row is a numeric fallback.
+pub(crate) fn noise_for(built: &[&crate::residual::Built]) -> f64 {
+    if built.iter().any(|b| crate::jac::is_numeric_fallback(b)) { COL_NOISE } else { ANALYTIC_NOISE }
+}
 /// Relative threshold below which a pivot counts as zero (the Jacobian is numerical).
 const RANK_TOL: f64 = 1e-7;
 
 /// Numerical rank of a row-major `rows × cols` Jacobian (rows and columns balanced first,
 /// Householder QR with column pivoting).
-pub(crate) fn rank_qr(m: &[f64], rows: usize, cols: usize) -> usize {
+pub(crate) fn rank_qr(m: &[f64], rows: usize, cols: usize, noise: f64) -> usize {
     if rows == 0 || cols == 0 {
         return 0;
     }
     // QR of the transpose: its columns are the Jacobian's rows.
-    qr(balanced_rows(m, rows, cols), RANK_TOL, 1e-12).0
+    qr(balanced_rows(m, rows, cols, noise), RANK_TOL, 1e-12).0
 }
 
 /// Rank and an orthonormal basis of the null space (each vector of length `cols`) of a
 /// row-major `rows × cols` Jacobian, in balanced column coordinates (a diagonal scaling, so
 /// which parameters a null vector moves is preserved).
-pub(crate) fn null_space(m: &[f64], rows: usize, cols: usize) -> (usize, Vec<Vec<f64>>) {
-    let (rank, refl) = if rows == 0 { (0, Vec::new()) } else { qr(balanced_rows(m, rows, cols), RANK_TOL, 1e-12) };
+pub(crate) fn null_space(m: &[f64], rows: usize, cols: usize, noise: f64) -> (usize, Vec<Vec<f64>>) {
+    let (rank, refl) = if rows == 0 { (0, Vec::new()) } else { qr(balanced_rows(m, rows, cols, noise), RANK_TOL, 1e-12) };
     let mut basis = Vec::with_capacity(cols.saturating_sub(rank));
     for j in rank..cols {
         let mut e = vec![0.0; cols];
@@ -492,23 +501,23 @@ mod tests {
         let y = solve_dense(vec![2.0, 1.0, 1.0, 3.0], vec![3.0, 5.0], 2).unwrap();
         assert!((y[0] - 0.8).abs() < 1e-12 && (y[1] - 1.4).abs() < 1e-12);
         assert!(solve_dense(vec![1.0, 2.0, 2.0, 4.0], vec![1.0, 1.0], 2).is_none());
-        assert_eq!(rank_qr(&[1.0, 0.0, 0.0, 1.0, 1.0, 1.0], 3, 2), 2);
-        assert_eq!(rank_qr(&[1.0, 2.0, 2.0, 4.0], 2, 2), 1);
-        assert_eq!(rank_qr(&[0.0; 4], 2, 2), 0);
-        assert_eq!(rank_qr(&[1e-9, 0.0, 0.0, 1e6], 2, 2), 2, "balanced: scale does not hide rank");
+        assert_eq!(rank_qr(&[1.0, 0.0, 0.0, 1.0, 1.0, 1.0], 3, 2, COL_NOISE), 2);
+        assert_eq!(rank_qr(&[1.0, 2.0, 2.0, 4.0], 2, 2, COL_NOISE), 1);
+        assert_eq!(rank_qr(&[0.0; 4], 2, 2, COL_NOISE), 0);
+        assert_eq!(rank_qr(&[1e-9, 0.0, 0.0, 1e6], 2, 2, COL_NOISE), 2, "balanced: scale does not hide rank");
     }
 
     #[test]
     fn null_space_spans_free_motion() {
         // x0 + x1 = c fixes one combination; x2 is untouched.
-        let (r, n) = null_space(&[1.0, 1.0, 0.0], 1, 3);
+        let (r, n) = null_space(&[1.0, 1.0, 0.0], 1, 3, COL_NOISE);
         assert_eq!((r, n.len()), (1, 2));
         for v in &n {
             assert!((v[0] + v[1]).abs() < 1e-12);
         }
         // x2's own motion survives in the null space; x0 alone does not.
         assert!(n.iter().any(|v| v[2].abs() > 0.5));
-        let (r, n) = null_space(&[], 0, 2);
+        let (r, n) = null_space(&[], 0, 2, COL_NOISE);
         assert_eq!((r, n.len()), (0, 2));
     }
 

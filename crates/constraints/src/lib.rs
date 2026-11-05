@@ -753,8 +753,11 @@ pub fn add(d: &mut Drawing, mut c: Constraint, opts: &SolveOptions) -> Result<u3
         let rows_old = rows_all - nb.rows;
         let nf = free.len();
         let jac = jac::dense(&comp.model, &ordered, &o.x, &free);
-        let r_all = lm::rank_qr(&jac, rows_all, nf);
-        let r_old = lm::rank_qr(jac.get(..rows_old * nf).unwrap_or_default(), rows_old, nf);
+        // Evaluated at a converged point: entries the solver left at its tolerance are residue, not
+        // structure, so the finite-difference noise cut stays.
+        let noise = lm::COL_NOISE;
+        let r_all = lm::rank_qr(&jac, rows_all, nf, noise);
+        let r_old = lm::rank_qr(jac.get(..rows_old * nf).unwrap_or_default(), rows_old, nf, noise);
         if r_all < r_old + nb.rows {
             return Err(SolveError::Redundant { ids: redundant_with(&comp, &ordered, &jac, nf, id) });
         }
@@ -770,11 +773,12 @@ pub fn add(d: &mut Drawing, mut c: Constraint, opts: &SolveOptions) -> Result<u3
         let nf = before.len();
         let prior: Vec<&Built> = comp.built.iter().enumerate().filter(|(i, _)| *i != pos).map(|(_, b)| b).collect();
         let mut jac = jac::dense(&comp.model, &prior, &o.x, &before);
-        let r_old = lm::rank_qr(&jac, rows_old, nf);
+        let noise = lm::COL_NOISE;
+        let r_old = lm::rank_qr(&jac, rows_old, nf, noise);
         for k in &locked {
             jac.extend((0..nf).map(|c| if c == *k { 1.0 } else { 0.0 }));
         }
-        if locked.is_empty() || lm::rank_qr(&jac, rows_old + locked.len(), nf) < r_old + locked.len() {
+        if locked.is_empty() || lm::rank_qr(&jac, rows_old + locked.len(), nf, noise) < r_old + locked.len() {
             let mine: Vec<Handle> = comp.built.get(pos).map(|b| b.refs.iter().map(|r| r.handle).collect()).unwrap_or_default();
             let ids = comp.built.iter().filter(|b| b.id != id && b.refs.iter().any(|r| mine.contains(&r.handle))).map(|b| b.id).collect();
             return Err(SolveError::Redundant { ids });
@@ -812,6 +816,7 @@ fn redundant_with(comp: &Comp, ordered: &[&Built], jac: &[f64], nf: usize, id: u
         (m, rows)
     };
     let new_rows = ordered.last().map_or(0, |b| b.rows);
+    let noise = lm::COL_NOISE;
     let mut ids = Vec::new();
     if ordered.len() <= MAX_CONFLICT_PROBES + 1 {
         for (i, b) in ordered.iter().enumerate().take(ordered.len().saturating_sub(1)) {
@@ -820,7 +825,7 @@ fn redundant_with(comp: &Comp, ordered: &[&Built], jac: &[f64], nf: usize, id: u
             }
             let (old, ro) = pick(i, false);
             let (all, ra) = pick(i, true);
-            if lm::rank_qr(&all, ra, nf) == lm::rank_qr(&old, ro, nf) + new_rows {
+            if lm::rank_qr(&all, ra, nf, noise) == lm::rank_qr(&old, ro, nf, noise) + new_rows {
                 ids.push(b.id);
             }
         }

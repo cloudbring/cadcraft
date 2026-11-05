@@ -4,8 +4,8 @@
 //! The CSV is produced by `lean/solver/Generate.lean`: exact rational Jacobians, their exact rank
 //! (`CraftSolver.gsRank`, proved equal to `Matrix.rank`), DOF and redundancy. `source` is
 //! `sketch` for Jacobians exported from real cadcraft sketches (rebuilt here and compared entry by
-//! entry), `synthetic` for hand-built ones, `tolerance` for a pinned divergence caused by the
-//! solver's numerical tolerance.
+//! entry), `synthetic` for hand-built ones, `tolerance` for a matrix with a tiny but real column (the
+//! finite-difference noise cut would drop it; the analytic path must not).
 
 use std::collections::HashMap;
 
@@ -225,14 +225,15 @@ fn rank_and_dof_match_exact_lean_values() {
     let v = vectors();
     assert!(v.len() >= 20, "{} vectors", v.len());
     for r in &v {
-        let rank = lm::rank_qr(&r.m, r.rows, r.cols);
+        let rank = lm::rank_qr(&r.m, r.rows, r.cols, lm::ANALYTIC_NOISE);
         assert_eq!(r.dof, r.cols - r.rank, "{}: csv dof", r.case);
         assert_eq!(r.redundant, r.rows - r.rank, "{}: csv redundancy", r.case);
+        assert_eq!(rank, r.rank, "{}", r.case);
+        assert_eq!(r.cols - rank.min(r.cols), r.dof, "{}", r.case);
         if r.source == "tolerance" {
-            assert!(rank < r.rank, "{}: solver tolerance should lose exact rank {} (got {rank})", r.case, r.rank);
-        } else {
-            assert_eq!(rank, r.rank, "{}", r.case);
-            assert_eq!(r.cols - rank.min(r.cols), r.dof, "{}", r.case);
+            // The finite-difference noise cut is not rank-preserving; it must not apply to analytic Jacobians.
+            let fd = lm::rank_qr(&r.m, r.rows, r.cols, lm::COL_NOISE);
+            assert!(fd < r.rank, "{}: the finite-difference cut should lose exact rank {} (got {fd})", r.case, r.rank);
         }
     }
 }
@@ -240,7 +241,7 @@ fn rank_and_dof_match_exact_lean_values() {
 #[test]
 fn rank_is_invariant_under_permutation_and_scaling() {
     let mut rng = Lcg(0x219);
-    for r in vectors().iter().filter(|r| r.source != "tolerance") {
+    for r in vectors().iter() {
         let rp = rng.perm(r.rows);
         let cp = rng.perm(r.cols);
         let rs: Vec<f64> = (0..r.rows).map(|_| 10f64.powi((rng.next() % 5) as i32 - 2)).collect();
@@ -251,13 +252,13 @@ fn rank_is_invariant_under_permutation_and_scaling() {
                 m[i * r.cols + j] = r.m[rp[i] * r.cols + cp[j]];
             }
         }
-        assert_eq!(lm::rank_qr(&m, r.rows, r.cols), r.rank, "{}: permuted", r.case);
+        assert_eq!(lm::rank_qr(&m, r.rows, r.cols, lm::ANALYTIC_NOISE), r.rank, "{}: permuted", r.case);
         for i in 0..r.rows {
             for j in 0..r.cols {
                 m[i * r.cols + j] *= rs[i] * cs[j];
             }
         }
-        assert_eq!(lm::rank_qr(&m, r.rows, r.cols), r.rank, "{}: permuted and scaled", r.case);
+        assert_eq!(lm::rank_qr(&m, r.rows, r.cols, lm::ANALYTIC_NOISE), r.rank, "{}: permuted and scaled", r.case);
     }
 }
 

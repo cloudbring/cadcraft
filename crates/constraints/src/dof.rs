@@ -118,10 +118,10 @@ fn analyse(comp: &Comp) -> CompDof {
     let built: Vec<&crate::residual::Built> = comp.built.iter().collect();
     let jac = crate::jac::dense(&comp.model, &built, &comp.model.x0, &free);
     if nf > MAX_NULL_COLS {
-        let rank = lm::rank_qr(&jac, rows, nf);
+        let rank = lm::rank_qr(&jac, rows, nf, lm::noise_for(&built));
         return CompDof { dof: Some(nf - rank.min(nf)), redundant: rows.saturating_sub(rank), objects: vec![None; comp.model.slots.len()] };
     }
-    let (rank, basis) = lm::null_space(&jac, rows, nf);
+    let (rank, basis) = lm::null_space(&jac, rows, nf, lm::noise_for(&built));
     let objects = comp
         .model
         .slots
@@ -281,8 +281,8 @@ mod budget_tests {
         let analytic = crate::jac::dense(&comp.model, &built, &comp.model.x0, &free);
         let f = |x: &[f64], out: &mut Vec<f64>| comp.eval(x, out, None);
         let finite = lm::jacobian(&f, &comp.model.x0, &free, rows);
-        let an_rank = lm::rank_qr(&analytic, rows, free.len());
-        let fd_rank = lm::rank_qr(&finite, rows, free.len());
+        let an_rank = lm::rank_qr(&analytic, rows, free.len(), lm::ANALYTIC_NOISE);
+        let fd_rank = lm::rank_qr(&finite, rows, free.len(), lm::COL_NOISE);
         assert_eq!(an_rank, rows, "analytic rank {an_rank}, jac {analytic:?}");
         assert_eq!(rows - fd_rank, 1, "finite-difference rank {fd_rank} should drop the radial column");
         assert!(an_rank > fd_rank);
