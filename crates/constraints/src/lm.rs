@@ -375,7 +375,7 @@ fn numeric_trips(f: &dyn Fn(&[f64], &mut Vec<f64>), x: &[f64], free: &[usize], r
 
 /// Dense `J W⁻¹ Jᵀ + μ D I`, Gaussian elimination. Same accumulation order as before the
 /// sparse factor, so a system inside [`DENSE_LIMIT`] takes the same steps.
-fn dense_normal(jac: &[f64], winv: &[f64], r: &[f64], rows: usize, nf: usize, mu: f64) -> Option<Vec<f64>> {
+pub(crate) fn dense_normal(jac: &[f64], winv: &[f64], r: &[f64], rows: usize, nf: usize, mu: f64) -> Option<Vec<f64>> {
     let mut a = vec![0.0; rows.saturating_mul(rows)];
     for i in 0..rows {
         for k in i..rows {

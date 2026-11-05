@@ -1,0 +1,36 @@
+import CraftSolver
+
+#print axioms CraftSolver.rank_reindex
+#print axioms CraftSolver.dof_reindex
+#print axioms CraftSolver.redundant_reindex
+#print axioms CraftSolver.rank_permMatrix
+#print axioms CraftSolver.rank_diag_scale
+#print axioms CraftSolver.rank_row_scale
+#print axioms CraftSolver.rank_col_scale
+#print axioms CraftSolver.balRow_spec
+#print axioms CraftSolver.rank_balance_rows
+#print axioms CraftSolver.rank_balance_cols
+#print axioms CraftSolver.finrank_span_insert_add_one
+#print axioms CraftSolver.rank_dropRow_of_mem_span
+#print axioms CraftSolver.rank_dropRow_of_not_mem_span
+#print axioms CraftSolver.dof_dropRow_of_mem_span
+#print axioms CraftSolver.selMax_none
+#print axioms CraftSolver.selMax_some
+#print axioms CraftSolver.spanL_cons_proj
+#print axioms CraftSolver.finrank_cons
+#print axioms CraftSolver.gsRankF_eq
+#print axioms CraftSolver.gsRank_eq_rank
+#print axioms CraftSolver.dof_eq_gsRank
+#print axioms CraftSolver.gsRank_perm
+#print axioms CraftSolver.reorder_mulVec
+#print axioms CraftSolver.solve_equiv
+#print axioms CraftSolver.unreorder
+#print axioms CraftSolver.reorder_eq_permMatrix
+#print axioms CraftSolver.permMatrix_mulVec_eq
+#print axioms CraftSolver.solve_equiv_permMatrix
+#print axioms CraftSolver.cholesky_solves
+#print axioms CraftSolver.posDef_reorder
+#print axioms CraftSolver.spd_unique
+#print axioms CraftSolver.dense_eq_ordered
+#print axioms CraftSolver.rank_normal
+#print axioms CraftSolver.posDef_damped

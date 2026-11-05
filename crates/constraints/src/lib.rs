@@ -30,6 +30,8 @@ mod dof;
 pub mod expr;
 mod geom_d;
 mod jac;
+#[cfg(test)]
+mod lean_vectors;
 mod lm;
 mod model;
 mod owen;
